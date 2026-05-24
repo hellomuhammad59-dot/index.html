@@ -326,11 +326,19 @@ function render(){
       </div>
     </div>
     <div class="two-col" style="margin-top:12px">
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 أفضل 6 مدن</span></div><div class="panel-body">
+      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 أفضل 6 مدن أداءً</span></div><div class="panel-body">
         ${c.cities.slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
       </div></div>
-      <div class="panel"><div class="panel-head"><span class="panel-title">🔴 أسوأ 6 مدن</span></div><div class="panel-body">
+      <div class="panel"><div class="panel-head"><span class="panel-title">🔴 أسوأ 6 مدن أداءً</span></div><div class="panel-body">
         ${[...c.cities].sort((a,b)=>a.perf-b.perf).slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
+      </div></div>
+    </div>
+    <div class="two-col" style="margin-top:12px">
+      <div class="panel"><div class="panel-head"><span class="panel-title">🏪 أفضل 6 متاجر أداءً</span></div><div class="panel-body">
+        ${[...c.stores].sort((a,b)=>b.perf-a.perf).slice(0,6).map(s=>`<div class="bar-row"><span class="br-label" title="${s.store}" style="width:90px;font-size:10px">${s.store}</span><div class="br-track"><div class="br-fill" style="width:${(s.perf*100).toFixed(0)}%;background:${perfColor(s.perf)}"></div></div><span class="br-val">${pct(s.perf)}</span></div>`).join('')}
+      </div></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">🚨 أسوأ 6 متاجر أداءً</span></div><div class="panel-body">
+        ${c.stores.slice(0,6).map(s=>`<div class="bar-row"><span class="br-label" title="${s.store}" style="width:90px;font-size:10px">${s.store}</span><div class="br-track"><div class="br-fill" style="width:${(s.perf*100).toFixed(0)}%;background:${perfColor(s.perf)}"></div></div><span class="br-val">${pct(s.perf)}</span><span class="br-delta" style="font-size:10px;color:var(--text3)">${s.n}k</span></div>`).join('')}
       </div></div>
     </div>`;
   }
