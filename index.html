@@ -3,620 +3,911 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OPS.INTEL — Daily Operations Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>OPS.INTEL — Universal Analyzer</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --font-head:'Syne',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+:root{--font-head:'Syne',sans-serif;--font-mono:'IBM Plex Mono',monospace;
   --green:#00c47a;--green2:#008f58;--green-bg:#00c47a12;
   --red:#e8334a;--red2:#b8273b;--red-bg:#e8334a12;
   --amber:#d4891a;--amber2:#a86c12;--amber-bg:#d4891a12;
   --blue:#2b7fd4;--blue2:#1a63aa;--blue-bg:#2b7fd412;
+  --purple:#7c5cbf;--purple-bg:#7c5cbf12;
 }
 :root,[data-theme="dark"]{
   --bg:#0a0c0f;--bg2:#111418;--bg3:#181c22;--bg4:#1e242c;
-  --border:#ffffff0f;--border2:#ffffff18;
+  --border:#ffffff0f;--border2:#ffffff1a;
   --text:#e8eaf0;--text2:#8b90a0;--text3:#555b6a;
-  --shadow:0 2px 12px rgba(0,0,0,.4);
+  --shadow:0 2px 16px rgba(0,0,0,.5);
 }
 [data-theme="light"]{
   --bg:#f0f2f5;--bg2:#ffffff;--bg3:#f5f7fa;--bg4:#eaedf2;
   --border:#00000010;--border2:#00000018;
   --text:#1a1d24;--text2:#5a6070;--text3:#9aa0b0;
   --shadow:0 2px 12px rgba(0,0,0,.08);
-  --green:#008f58;--green2:#006e42;--green-bg:#008f5812;
-  --red:#c4293d;--red2:#9e2030;--red-bg:#c4293d12;
-  --amber:#b5730f;--amber2:#8f5a0a;--amber-bg:#b5730f12;
-  --blue:#1a63aa;--blue2:#134e88;--blue-bg:#1a63aa12;
+  --green:#008f58;--green-bg:#008f5812;
+  --red:#c4293d;--red-bg:#c4293d12;
+  --amber:#b5730f;--amber-bg:#b5730f12;
+  --blue:#1a63aa;--blue-bg:#1a63aa12;
 }
-.theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:4px;display:flex;align-items:center;gap:2px;cursor:pointer;transition:all .2s}
-.theme-toggle span{padding:4px 10px;border-radius:14px;font-size:11px;font-family:var(--font-head);font-weight:600;transition:all .2s;color:var(--text3);user-select:none}
-.theme-toggle span.active{background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
 body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:13px;min-height:100vh;transition:background .25s,color .25s}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.logo{font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)}
+/* ── Topbar ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:10px;flex-wrap:wrap}
+.logo{font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--text);flex-shrink:0}
 .logo span{color:var(--green)}
-.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
-.status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.status-label{font-size:11px;color:var(--text2)}
-.upload-btn{border:1.5px dashed var(--border2);border-radius:7px;padding:7px 14px;cursor:pointer;background:var(--bg3);display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);font-family:var(--font-mono);transition:all .2s;white-space:nowrap}
-.upload-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
-.upload-btn.prev:hover,.upload-btn.prev.loaded{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
-.upload-btn.loaded{border-color:var(--green2);color:var(--green);background:var(--green-bg)}
-.upload-btn input{display:none}
-.main{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
-.welcome{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:48px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
-.welcome h1{font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--text)}
-.welcome p{color:var(--text2);font-size:12px;max-width:440px;line-height:1.9}
-.welcome-btns{display:flex;gap:14px}
-.welcome-btns label{border:1.5px dashed var(--border2);border-radius:10px;padding:24px 32px;cursor:pointer;background:var(--bg3);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;color:var(--text2);transition:all .2s;min-width:160px}
-.welcome-btns label:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
-.welcome-btns label.prev:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
-.welcome-btns label input{display:none}
-.tab-bar{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px;flex-wrap:wrap}
-.tab{padding:7px 16px;border-radius:5px;font-size:11px;font-family:var(--font-head);font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:transparent;letter-spacing:.04em}
+.logo sub{font-size:9px;color:var(--text3);font-weight:400;margin-right:4px}
+.topbar-mid{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;justify-content:center}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.upload-pill{border:1.5px dashed var(--border2);border-radius:20px;padding:5px 14px;cursor:pointer;background:var(--bg3);display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);transition:all .2s;white-space:nowrap}
+.upload-pill:hover,.upload-pill.loaded{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.upload-pill.prev.loaded{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.upload-pill input{display:none}
+.status-wrap{display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.dot.live{background:var(--green);box-shadow:0 0 5px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.theme-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:3px;display:flex;gap:2px;cursor:pointer}
+.theme-btn span{padding:3px 9px;border-radius:12px;font-size:10px;font-family:var(--font-head);font-weight:600;color:var(--text3);transition:all .2s;user-select:none}
+.theme-btn span.on{background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
+/* ── Main ── */
+.main{padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+/* ── Welcome ── */
+.drop-zone{border:2px dashed var(--border2);border-radius:16px;padding:52px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;cursor:pointer;transition:all .25s;background:var(--bg2)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--green);background:var(--green-bg)}
+.drop-zone h2{font-family:var(--font-head);font-size:20px;font-weight:700}
+.drop-zone p{font-size:12px;color:var(--text2);max-width:400px;line-height:1.9}
+.drop-zone input{display:none}
+.drop-icon{font-size:44px;opacity:.7}
+.btn-upload{background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-family:var(--font-head);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-upload:hover{background:var(--green2)}
+/* ── Mapping UI ── */
+.map-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.map-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.map-title{font-family:var(--font-head);font-size:13px;font-weight:700}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1px;background:var(--border)}
+.map-row{background:var(--bg2);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.map-field{font-size:11px;font-weight:500;color:var(--text);min-width:130px;flex-shrink:0}
+.map-field sub{display:block;font-size:9px;color:var(--text3);font-weight:400;margin-top:1px}
+.map-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 8px;border-radius:5px;font-size:11px;font-family:var(--font-mono);flex:1;cursor:pointer}
+.map-select:focus{outline:none;border-color:var(--green)}
+.map-badge{font-size:9px;padding:2px 6px;border-radius:3px;font-family:var(--font-head);font-weight:600;flex-shrink:0}
+.map-badge.auto{background:var(--green-bg);color:var(--green)}
+.map-badge.manual{background:var(--amber-bg);color:var(--amber)}
+.map-badge.miss{background:var(--red-bg);color:var(--red)}
+.btn-analyze{background:var(--green);color:#fff;border:none;border-radius:7px;padding:8px 20px;font-family:var(--font-head);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-analyze:hover{background:var(--green2)}
+.btn-analyze:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed}
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:5px;font-size:11px;font-family:var(--font-head);font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:transparent;letter-spacing:.03em}
 .tab.active{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
 .tab:hover:not(.active){color:var(--text);background:var(--bg3)}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+/* ── KPIs ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:13px 15px;position:relative;overflow:hidden;transition:border-color .2s}
 .kpi:hover{border-color:var(--border2)}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.kpi.green::before{background:var(--green)}
-.kpi.red::before{background:var(--red)}
-.kpi.amber::before{background:var(--amber)}
-.kpi.blue::before{background:var(--blue)}
-.kpi-label{font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.04em}
-.kpi-value{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--text);line-height:1}
-.kpi-delta{font-size:11px;margin-top:5px}
-.kpi-delta.up{color:var(--green)}
-.kpi-delta.dn{color:var(--red)}
-.kpi-delta.neu{color:var(--text3)}
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:0}
-.panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.panel-title{font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--text);letter-spacing:.05em}
-.panel-body{padding:14px 16px}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11px}
-.br-label{width:72px;color:var(--text2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.br-track{flex:1;background:var(--bg4);border-radius:3px;height:6px;overflow:hidden}
-.br-fill{height:100%;border-radius:3px;transition:width .5s ease}
-.br-val{width:44px;text-align:left;flex-shrink:0;font-weight:500;color:var(--text);font-size:11px}
-.br-delta{width:42px;text-align:left;flex-shrink:0;font-size:10px}
-.seg-bar{display:flex;height:18px;border-radius:4px;overflow:hidden;gap:1px;margin:8px 0}
-.seg-piece{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;overflow:hidden;transition:flex .5s;font-family:var(--font-head)}
-.seg-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
-.seg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
-.seg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.data-table{width:100%;border-collapse:collapse;font-size:11px}
-.data-table th{padding:8px 10px;text-align:right;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;font-family:var(--font-head);font-size:10px;letter-spacing:.04em;white-space:nowrap}
-.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tr:hover td{background:var(--bg3);color:var(--text)}
-.pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;font-family:var(--font-head)}
-.pill.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,106,.2)}
-.pill.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
-.pill.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,229,160,.2)}
-.pill.blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(77,159,255,.2)}
-.pill.gray{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.compare-badge{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(77,159,255,.25);font-family:var(--font-head);font-weight:600}
-.signal-list{display:flex;flex-direction:column}
-.signal{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;transition:background .15s}
-.signal:last-child{border-bottom:none}
-.signal:hover{background:var(--bg3)}
-.sig-badge{font-size:10px;padding:3px 8px;border-radius:3px;font-weight:600;font-family:var(--font-head);white-space:nowrap;flex-shrink:0;margin-top:1px}
-.sig-badge.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,106,.2)}
-.sig-badge.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
-.sig-title{font-weight:500;color:var(--text);margin-bottom:3px;font-size:12px}
-.sig-desc{color:var(--text2);font-size:11px;line-height:1.6}
-.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.filter-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 12px;border-radius:6px;font-size:11px;font-family:var(--font-mono);flex:1;min-width:200px}
-.filter-input:focus{outline:none;border-color:var(--green)}
-.filter-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:11px;font-family:var(--font-mono);cursor:pointer}
-.filter-select:focus{outline:none;border-color:var(--green)}
+.kpi.g::before{background:var(--green)}.kpi.r::before{background:var(--red)}.kpi.a::before{background:var(--amber)}.kpi.b::before{background:var(--blue)}.kpi.p::before{background:var(--purple)}
+.kpi-lbl{font-size:10px;color:var(--text3);margin-bottom:5px;letter-spacing:.03em}
+.kpi-val{font-family:var(--font-head);font-size:21px;font-weight:700;color:var(--text);line-height:1}
+.kpi-sub{font-size:10px;margin-top:4px}
+.kpi-sub.up{color:var(--green)}.kpi-sub.dn{color:var(--red)}.kpi-sub.neu{color:var(--text3)}
+/* ── Panels ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pt{font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--text);letter-spacing:.04em}
+.pb{padding:13px 15px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+/* ── Bars ── */
+.br{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:11px}
+.br-l{width:88px;color:var(--text2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.br-t{flex:1;background:var(--bg4);border-radius:3px;height:6px;overflow:hidden}
+.br-f{height:100%;border-radius:3px;transition:width .5s}
+.br-v{width:40px;text-align:left;flex-shrink:0;font-weight:500;font-size:11px;color:var(--text)}
+.br-d{width:38px;text-align:left;flex-shrink:0;font-size:10px}
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{padding:7px 9px;text-align:right;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;font-family:var(--font-head);font-size:10px;letter-spacing:.03em;white-space:nowrap}
+.tbl td{padding:7px 9px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg3);color:var(--text)}
+/* ── Pills ── */
+.pill{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;font-family:var(--font-head)}
+.pill.g{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,196,122,.2)}
+.pill.r{background:var(--red-bg);color:var(--red);border:1px solid rgba(232,51,74,.2)}
+.pill.a{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(212,137,26,.2)}
+.pill.b{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(43,127,212,.2)}
+.pill.x{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+/* ── Alerts ── */
+.alerts{display:flex;flex-direction:column}
+.alert-row{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;transition:background .15s}
+.alert-row:last-child{border-bottom:none}
+.alert-row:hover{background:var(--bg3)}
+.alert-badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;font-family:var(--font-head);white-space:nowrap;flex-shrink:0;margin-top:1px}
+.alert-badge.r{background:var(--red-bg);color:var(--red);border:1px solid rgba(232,51,74,.2)}
+.alert-badge.a{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(212,137,26,.2)}
+.alert-badge.b{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(43,127,212,.2)}
+.alert-title{font-weight:500;color:var(--text);margin-bottom:2px;font-size:12px}
+.alert-desc{color:var(--text2);font-size:11px;line-height:1.5}
+/* ── Seg bar ── */
+.seg-bar{display:flex;height:16px;border-radius:3px;overflow:hidden;gap:1px;margin:7px 0}
+.seg-p{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;overflow:hidden;font-family:var(--font-head)}
+.seg-leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.seg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+.seg-d{width:7px;height:7px;border-radius:2px}
+/* ── Filters ── */
+.filter-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.fi{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:6px;font-size:11px;font-family:var(--font-mono)}
+.fi:focus{outline:none;border-color:var(--green)}
+.fi.inp{flex:1;min-width:180px}
 .scroll-x{overflow-x:auto}
-.empty-state{text-align:center;padding:48px;color:var(--text3);font-size:12px;line-height:2}
-.green-txt{color:var(--green)}
-.red-txt{color:var(--red)}
-.amber-txt{color:var(--amber)}
-.blue-txt{color:var(--blue)}
-.no-comp{font-size:10px;color:var(--text3);font-style:italic}
-@media(max-width:600px){.two-col{grid-template-columns:1fr}.topbar-right{gap:6px}.welcome-btns{flex-direction:column}}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:12px;line-height:2}
+.g-txt{color:var(--green)}.r-txt{color:var(--red)}.a-txt{color:var(--amber)}.b-txt{color:var(--blue)}
+.compare-badge{font-size:10px;padding:2px 7px;border-radius:3px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(43,127,212,.25);font-family:var(--font-head);font-weight:600}
+.info-chip{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+@media(max-width:600px){.two,.three{grid-template-columns:1fr}.topbar{flex-wrap:wrap}}
 </style>
 </head>
 <body>
-
 <div class="topbar">
-  <div class="logo">OPS<span>.</span>INTEL</div>
+  <div class="logo">OPS<span>.</span>INTEL <sub>Universal</sub></div>
+  <div class="topbar-mid">
+    <label class="upload-pill" id="lbl-curr">
+      <input type="file" id="f-curr" accept=".xlsx,.xls,.csv">
+      <span id="ic-curr">📊</span><span id="tx-curr">رفع الملف الحالي</span>
+    </label>
+    <label class="upload-pill prev" id="lbl-prev">
+      <input type="file" id="f-prev" accept=".xlsx,.xls,.csv">
+      <span id="ic-prev">📅</span><span id="tx-prev">مقارنة بالفترة السابقة</span>
+    </label>
+  </div>
   <div class="topbar-right">
-    <div class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
-      <span id="t-day">☀️ نهاري</span>
-      <span id="t-night" class="active">🌙 ليلي</span>
-    </div>
-    <label class="upload-btn" id="curr-label">
-      <input type="file" id="curr-file" accept=".xlsx,.xls,.csv">
-      <span id="curr-icon">📊</span>
-      <span id="curr-text">الفترة الحالية</span>
-    </label>
-    <label class="upload-btn prev" id="prev-label">
-      <input type="file" id="prev-file" accept=".xlsx,.xls,.csv">
-      <span id="prev-icon">📅</span>
-      <span id="prev-text">الفترة السابقة (مقارنة)</span>
-    </label>
-    <div style="display:flex;align-items:center;gap:6px">
-      <div class="status-dot" id="status-dot"></div>
-      <span class="status-label" id="status-label">بانتظار البيانات</span>
-    </div>
+    <div class="status-wrap"><div class="dot" id="sdot"></div><span style="font-size:10px;color:var(--text2)" id="slbl">بانتظار ملف</span></div>
+    <div class="theme-btn" onclick="toggleTheme()"><span id="td">☀️</span><span id="tn" class="on">🌙</span></div>
   </div>
 </div>
-
 <div class="main" id="main"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-let currData=null,prevData=null,activeTab='overview';
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currRaw=null,prevRaw=null,currMap=null,prevMap=null;
+let currAgg=null,prevAgg=null;
+let activeTab='overview';
+let isDark=true;
 
+// ══════════════════════════════════════════════
+//  COLUMN DETECTION ENGINE
+// ══════════════════════════════════════════════
+const FIELDS = [
+  { key:'id',       label:'معرّف الكابتن / المتجر', desc:'captain_id / rider_id / store',
+    keywords:['captain_id','rider_id','driver_id','cap_id','rider','captain','driver','id','كابتن','سائق','معرف','store_code','store','متجر','فرع'] },
+  { key:'name',     label:'الاسم', desc:'name / full_name',
+    keywords:['name','full_name','captain_name','rider_name','driver_name','اسم','الاسم'] },
+  { key:'city',     label:'المدينة / المنطقة', desc:'city / zone',
+    keywords:['city','city_code','zone','region','area','مدينة','منطقة','city_name'] },
+  { key:'store',    label:'المتجر / الفرع', desc:'store_code / branch',
+    keywords:['store_code','store','branch','فرع','متجر','store_name','hub'] },
+  { key:'date',     label:'التاريخ / اليوم', desc:'day / date',
+    keywords:['day','date','تاريخ','يوم','datetime','created_at','period'] },
+  { key:'orders',   label:'إجمالي الطلبات', desc:'total_orders / orders',
+    keywords:['total_orders','orders','order_count','num_orders','طلبات','الطلبات','deliveries','trips'] },
+  { key:'perf',     label:'الأداء / الإنتاجية', desc:'performance / score',
+    keywords:['performance','performnce','perf','score','productivity','rating','أداء','إنتاجية','kpi'] },
+  { key:'pickup_pct', label:'نسبة الاستلام', desc:'pickup_success_pct',
+    keywords:['pickup_success','pickup_pct','on_time_pickup','pickup_rate','استلام','نسبة_استلام','acceptance'] },
+  { key:'del_pct',  label:'نسبة التوصيل', desc:'delivery_success_rate_pct',
+    keywords:['delivery_success','delivery_pct','delivery_rate','on_time_delivery','توصيل','نسبة_توصيل','completion_rate','completion'] },
+  { key:'delay',    label:'متوسط التأخير (دقيقة)', desc:'avg_delay_min',
+    keywords:['avg_delay','delay','late','delay_min','تأخير','وقت_تأخير','lateness','avg_late'] },
+  { key:'max_delay',label:'أقصى تأخير', desc:'max_delay_min',
+    keywords:['max_delay','max_late','max_delay_min','أقصى_تأخير'] },
+  { key:'cancel',   label:'الإلغاء', desc:'cancellation / cancel_rate',
+    keywords:['cancel','cancellation','cancelled','cancel_rate','إلغاء','ملغي','rejected'] },
+  { key:'bad',      label:'الأيام السيئة', desc:'bad_days',
+    keywords:['bad_days','bad_day','poor_days','أيام_سيئة','سيئة'] },
+  { key:'handling', label:'وقت التعامل مع العميل', desc:'avg_customer_handling_min',
+    keywords:['handling','customer_handling','handle_time','وقت_العميل','handling_min','service_time'] },
+  { key:'country',  label:'الدولة', desc:'country_code',
+    keywords:['country','country_code','دولة','الدولة'] },
+];
+
+function detectMap(headers){
+  const map={};
+  const used=new Set();
+  const hLower=headers.map(h=>({orig:h,low:(h||'').toString().toLowerCase().replace(/[^a-z0-9أ-ي_]/g,'')}));
+  FIELDS.forEach(f=>{
+    let best=null,bestScore=0;
+    hLower.forEach(h=>{
+      if(used.has(h.orig))return;
+      f.keywords.forEach(kw=>{
+        const kwL=kw.toLowerCase();
+        let score=0;
+        if(h.low===kwL)score=100;
+        else if(h.low.includes(kwL)||kwL.includes(h.low))score=60;
+        else{
+          // partial overlap
+          const overlap=[...kwL].filter(c=>h.low.includes(c)).length;
+          score=overlap/Math.max(kwL.length,h.low.length)*40;
+        }
+        if(score>bestScore){bestScore=score;best=h.orig;}
+      });
+    });
+    if(best&&bestScore>=40){map[f.key]={col:best,auto:bestScore>=60};used.add(best);}
+    else{map[f.key]={col:'',auto:false};}
+  });
+  return map;
+}
+
+// ══════════════════════════════════════════════
+//  FILE PARSER
+// ══════════════════════════════════════════════
 function parseFile(file,cb){
   const reader=new FileReader();
   reader.onload=function(e){
     try{
       const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const raw=XLSX.utils.sheet_to_json(ws,{defval:0});
-      const data=raw.map(r=>({
-        id:r['captain_id']||r['Captain ID']||0,
-        city:r['city_code']||r['City']||'',
-        store:r['store_code']||r['Store']||'',
-        name:r['name']||r['Name']||'',
-        orders:+(r['total_orders']||0),
-        pickups:+(r['on_time_pickups']||0),
-        perf:+(r['performnce']||r['performance']||0),
-        pickup_pct:+(r['pickup_success_pct']||0),
-        del_n:+(r['on_time_deliveries']||0),
-        del_pct:+(r['delivery_success_rate_pct']||0),
-        delay:+(r['avg_delay_min']||0),
-        max_delay:+(r['max_delay_min']||0),
-        handling:+(r['avg_customer_handling_min']||0),
-        handling_pct:+(r['customer_handling_success_pct']||0),
-        bad:+(r['bad_days']||0),
-      })).filter(r=>r.orders>0||r.id);
-      cb(data);
+      const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+      const headers=raw.length?Object.keys(raw[0]):[];
+      cb({raw,headers,name:file.name});
     }catch(ex){alert('خطأ في قراءة الملف:\n'+ex.message);}
   };
   reader.readAsArrayBuffer(file);
 }
 
-function agg(data){
-  if(!data||!data.length)return null;
-  const n=data.length;
-  const totOrders=data.reduce((s,r)=>s+r.orders,0);
-  const avgPerf=data.reduce((s,r)=>s+r.perf,0)/n;
-  const avgPickup=data.reduce((s,r)=>s+r.pickup_pct,0)/n;
-  const avgDel=data.reduce((s,r)=>s+r.del_pct,0)/n;
-  const delayRows=data.filter(r=>r.delay>0);
-  const avgDelay=delayRows.length?delayRows.reduce((s,r)=>s+r.delay,0)/delayRows.length:0;
-  const avgBad=data.reduce((s,r)=>s+r.bad,0)/n;
-  const zeroDel=data.filter(r=>r.del_pct===0).length;
-  const zeroDelOrders=data.filter(r=>r.del_pct===0).reduce((s,r)=>s+r.orders,0);
-  const critical=data.filter(r=>r.perf<0.1).length;
-  const elite=data.filter(r=>r.perf>0.85&&r.orders>=20).length;
-  const highBad=data.filter(r=>r.bad>=5).length;
-  const fraud1=data.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).length;
-  const fraud2=data.filter(r=>r.handling<0.5&&r.orders>=5).length;
-  const maxDelay=data.reduce((m,r)=>Math.max(m,r.max_delay),0);
-  const uniqueCap=new Set(data.map(r=>r.id)).size;
-  const uniqueCity=new Set(data.map(r=>r.city)).size;
-  const uniqueStore=new Set(data.map(r=>r.store)).size;
-  const segs={
-    critical:data.filter(r=>r.perf<0.33).length,
-    poor:data.filter(r=>r.perf>=0.33&&r.perf<0.5).length,
-    avg:data.filter(r=>r.perf>=0.5&&r.perf<0.7).length,
-    good:data.filter(r=>r.perf>=0.7&&r.perf<0.85).length,
-    elite:data.filter(r=>r.perf>=0.85).length,
+// ══════════════════════════════════════════════
+//  DATA EXTRACTOR — uses mapping to normalize rows
+// ══════════════════════════════════════════════
+function extractRows(raw,map){
+  return raw.map(r=>{
+    const g=(key)=>{const col=map[key]&&map[key].col?map[key].col:'';return col?r[col]:undefined;};
+    const gn=(key)=>{const v=g(key);return v===undefined||v===''?null:+v||0;};
+    const gs=(key)=>{const v=g(key);return v===undefined?'':String(v||'').trim();};
+    // smart performance: if value > 1 assume it's percentage already
+    let perf=gn('perf');
+    if(perf!==null&&perf>1)perf=perf/100;
+    let pickup=gn('pickup_pct');
+    if(pickup!==null&&pickup>1)pickup=pickup/100;
+    let del=gn('del_pct');
+    if(del!==null&&del>1)del=del/100;
+    return{
+      id:gs('id')||gs('store'),
+      name:gs('name'),
+      city:gs('city'),
+      store:gs('store'),
+      date:gs('date'),
+      orders:gn('orders')||0,
+      perf:perf,
+      pickup_pct:pickup,
+      del_pct:del,
+      delay:gn('delay'),
+      max_delay:gn('max_delay'),
+      cancel:gn('cancel'),
+      bad:gn('bad')!==null?+gn('bad').toFixed(2):null,
+      handling:gn('handling'),
+      country:gs('country'),
+    };
+  }).filter(r=>r.orders>0||r.perf!==null||r.id);
+}
+
+// ══════════════════════════════════════════════
+//  AGGREGATOR
+// ══════════════════════════════════════════════
+function buildAgg(rows,map){
+  const n=rows.length;
+  if(!n)return null;
+  const has=key=>rows.some(r=>r[key]!==null&&r[key]!==undefined&&r[key]!=='');
+  const avg=(key)=>{const v=rows.filter(r=>r[key]!==null&&r[key]!==undefined);return v.length?v.reduce((s,r)=>s+r[key],0)/v.length:null;};
+  const wavg=(key,wkey)=>{
+    const v=rows.filter(r=>r[key]!==null&&r[key]!==undefined&&r[wkey]>0);
+    if(!v.length)return null;
+    const tw=v.reduce((s,r)=>s+r[wkey],0);
+    return tw?v.reduce((s,r)=>s+(r[key]*r[wkey]),0)/tw:null;
   };
-  const cityMap={};
-  data.forEach(r=>{
-    if(!cityMap[r.city])cityMap[r.city]={city:r.city,n:0,orders:0,perf:0,del:0,delay:0,dc:0,bad:0};
-    const c=cityMap[r.city];c.n++;c.orders+=r.orders;c.perf+=r.perf;c.del+=r.del_pct;c.bad+=r.bad;
-    if(r.delay>0){c.delay+=r.delay;c.dc++;}
+  const sum=key=>rows.reduce((s,r)=>s+(r[key]||0),0);
+
+  // weighted performance by orders if orders available
+  const hasOrders=has('orders')&&sum('orders')>0;
+  const avgPerf=hasOrders?wavg('perf','orders'):avg('perf');
+  const avgDel=hasOrders?wavg('del_pct','orders'):avg('del_pct');
+  const avgPickup=hasOrders?wavg('pickup_pct','orders'):avg('pickup_pct');
+
+  const totOrders=sum('orders');
+  const avgDelay=avg('delay');
+  const avgBad=avg('bad');
+  const avgCancel=avg('cancel');
+  const avgHandling=avg('handling');
+
+  // segments
+  const perfRows=rows.filter(r=>r.perf!==null);
+  const segs=perfRows.length?{
+    critical:perfRows.filter(r=>r.perf<0.33).length,
+    poor:perfRows.filter(r=>r.perf>=0.33&&r.perf<0.5).length,
+    avg:perfRows.filter(r=>r.perf>=0.5&&r.perf<0.7).length,
+    good:perfRows.filter(r=>r.perf>=0.7&&r.perf<0.85).length,
+    elite:perfRows.filter(r=>r.perf>=0.85).length,
+  }:null;
+
+  // group by city
+  const byCity={};
+  rows.forEach(r=>{
+    const k=r.city||'غير محدد';
+    if(!byCity[k])byCity[k]={key:k,n:0,orders:0,pSum:0,pN:0,dSum:0,dN:0,delSum:0,delN:0,bad:0,badN:0};
+    const c=byCity[k];c.n++;c.orders+=r.orders||0;
+    if(r.perf!==null){c.pSum+=r.perf*(r.orders||1);c.pN+=r.orders||1;}
+    if(r.del_pct!==null){c.dSum+=r.del_pct*(r.orders||1);c.dN+=r.orders||1;}
+    if(r.delay!==null){c.delSum+=r.delay;c.delN++;}
+    if(r.bad!==null){c.bad+=r.bad;c.badN++;}
   });
-  const cities=Object.values(cityMap).map(c=>({
-    city:c.city,n:c.n,orders:c.orders,
-    perf:+(c.perf/c.n).toFixed(4),del:+(c.del/c.n).toFixed(4),
-    delay:c.dc?+(c.delay/c.dc).toFixed(2):0,bad:+(c.bad/c.n).toFixed(2)
-  })).sort((a,b)=>b.perf-a.perf);
-  const storeMap={};
-  data.forEach(r=>{
-    if(!storeMap[r.store])storeMap[r.store]={store:r.store,n:0,orders:0,perf:0,del:0,delay:0,dc:0,bad:0};
-    const s=storeMap[r.store];s.n++;s.orders+=r.orders;s.perf+=r.perf;s.del+=r.del_pct;s.bad+=r.bad;
-    if(r.delay>0){s.delay+=r.delay;s.dc++;}
+  const cities=Object.values(byCity).map(c=>({
+    city:c.key,n:c.n,orders:c.orders,
+    perf:c.pN?+(c.pSum/c.pN).toFixed(4):null,
+    del:c.dN?+(c.dSum/c.dN).toFixed(4):null,
+    delay:c.delN?+(c.delSum/c.delN).toFixed(2):null,
+    bad:c.badN?+(c.bad/c.badN).toFixed(2):null,
+  })).filter(c=>c.perf!==null||c.orders>0).sort((a,b)=>(b.perf||0)-(a.perf||0));
+
+  // group by store
+  const byStore={};
+  rows.forEach(r=>{
+    const k=r.store||r.id||'غير محدد';
+    if(!byStore[k])byStore[k]={key:k,n:0,orders:0,pSum:0,pN:0,dSum:0,dN:0,delSum:0,delN:0,bad:0,badN:0};
+    const s=byStore[k];s.n++;s.orders+=r.orders||0;
+    if(r.perf!==null){s.pSum+=r.perf*(r.orders||1);s.pN+=r.orders||1;}
+    if(r.del_pct!==null){s.dSum+=r.del_pct*(r.orders||1);s.dN+=r.orders||1;}
+    if(r.delay!==null){s.delSum+=r.delay;s.delN++;}
+    if(r.bad!==null){s.bad+=r.bad;s.badN++;}
   });
-  const stores=Object.values(storeMap).filter(s=>s.n>=5).map(s=>({
-    store:s.store,n:s.n,orders:s.orders,
-    perf:+(s.perf/s.n).toFixed(4),del:+(s.del/s.n).toFixed(4),
-    delay:s.dc?+(s.delay/s.dc).toFixed(2):0,bad:+(s.bad/s.n).toFixed(2)
-  })).sort((a,b)=>a.perf-b.perf);
-  return{n,totOrders,avgPerf,avgPickup,avgDel,avgDelay,avgBad,zeroDel,zeroDelOrders,
-    critical,elite,highBad,fraud1,fraud2,maxDelay,uniqueCap,uniqueCity,uniqueStore,segs,cities,stores,raw:data};
+  const stores=Object.values(byStore).map(s=>({
+    store:s.key,n:s.n,orders:s.orders,
+    perf:s.pN?+(s.pSum/s.pN).toFixed(4):null,
+    del:s.dN?+(s.dSum/s.dN).toFixed(4):null,
+    delay:s.delN?+(s.delSum/s.delN).toFixed(2):null,
+    bad:s.badN?+(s.bad/s.badN).toFixed(2):null,
+  })).filter(s=>s.perf!==null||s.orders>0).sort((a,b)=>(b.perf||0)-(a.perf||0));
+
+  // fraud signals
+  const fraud1=rows.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).length;
+  const fraud2=rows.filter(r=>r.handling!==null&&r.handling<0.5&&r.orders>=5).length;
+  const zeroDel=rows.filter(r=>r.del_pct===0).length;
+  const elite=rows.filter(r=>r.perf!==null&&r.perf>0.85&&r.orders>=10).length;
+  const critical=rows.filter(r=>r.perf!==null&&r.perf<0.1&&r.orders>=3).length;
+  const highBad=rows.filter(r=>r.bad!==null&&r.bad>=5).length;
+  const maxDelay=Math.max(0,...rows.filter(r=>r.max_delay!==null).map(r=>r.max_delay));
+
+  // auto alerts
+  const alerts=[];
+  if(avgPerf!==null&&avgPerf<0.5)alerts.push({type:'r',code:'PERF-LOW',title:`متوسط الأداء منخفض جداً: ${pct(avgPerf)}`,desc:'الهدف يجب أن يكون فوق 70%. يحتاج تدخلاً تشغيلياً عاجلاً.'});
+  if(avgDel!==null&&avgDel<0.5)alerts.push({type:'r',code:'DEL-LOW',title:`نسبة التوصيل الناجح: ${pct(avgDel)}`,desc:'أقل من النصف — مشكلة هيكلية في آخر ميل.'});
+  if(fraud1>0)alerts.push({type:'r',code:'FRAUD-1',title:`${fraud1} سجل: استلام عالي + صفر توصيل`,desc:'احتمال تلاعب ممنهج — يجب مراجعة فورية.'});
+  if(fraud2>0)alerts.push({type:'a',code:'FRAUD-2',title:`${fraud2} سجل: وقت تعامل مع العميل أقل من 30 ثانية`,desc:'توصيل وهمي محتمل.'});
+  if(zeroDel>0)alerts.push({type:'a',code:'ZERO-DEL',title:`${zeroDel} سجل بصفر توصيل ناجح`,desc:'يشمل '+(rows.filter(r=>r.del_pct===0).reduce((s,r)=>s+(r.orders||0),0))+' طلب ضائع.'});
+  if(highBad>0)alerts.push({type:'a',code:'BAD-DAYS',title:`${highBad} سجل بـ 5+ أيام سيئة`,desc:'أداء سيئ متكرر — تدريب أو إجراء تأديبي.'});
+  if(critical>0)alerts.push({type:'r',code:'CRIT-ZERO',title:`${critical} سجل بأداء أقل من 10%`,desc:'غياب تشغيلي كامل — تجميد فوري.'});
+  if(maxDelay>90)alerts.push({type:'a',code:'MAX-DELAY',title:`أقصى تأخير مسجل: ${maxDelay.toFixed(0)} دقيقة`,desc:'يجب مراجعة مسار GPS لتلك الرحلة.'});
+  if(avgCancel!==null&&avgCancel>0.1)alerts.push({type:'a',code:'CANCEL',title:`معدل إلغاء مرتفع: ${pct(avgCancel)}`,desc:'فوق 10% — يؤثر على رضا العميل.'});
+  if(!alerts.length)alerts.push({type:'b',code:'OK',title:'لا تنبيهات حرجة مكتشفة',desc:'المؤشرات ضمن الحدود المقبولة بناءً على البيانات المتاحة.'});
+
+  // suggestions
+  const suggestions=[];
+  if(avgPerf!==null&&avgPerf<0.6)suggestions.push('تطبيق برنامج Coaching فوري للشريحة 33-60%');
+  if(fraud1>5)suggestions.push('مراجعة الـ '+fraud1+' كابتن بنمط FRAUD-1 وتجميد مؤقت');
+  if(zeroDel>rows.length*0.1)suggestions.push('تفعيل نظام تحقق ثنائي عند عدم تسجيل توصيل');
+  if(avgDelay!==null&&avgDelay>10)suggestions.push('مراجعة مناطق التأخير الجغرافية وتقليل المسافات في الـ Dispatch');
+  if(elite<rows.length*0.05)suggestions.push('برنامج تحفيزي لكباتن النخبة لرفع نسبتهم');
+  if(avgCancel!==null&&avgCancel>0.1)suggestions.push('تحليل أسباب الإلغاء ومعالجة الـ Root Cause');
+
+  const uniqueCities=new Set(rows.map(r=>r.city||'')).size;
+  const uniqueStores=new Set(rows.map(r=>r.store||r.id||'')).size;
+
+  return{n,totOrders,avgPerf,avgDel,avgPickup,avgDelay,avgBad,avgCancel,avgHandling,
+    zeroDel,elite,critical,highBad,fraud1,fraud2,maxDelay,segs,
+    cities,stores,raw:rows,alerts,suggestions,
+    uniqueCities,uniqueStores,has,map,
+    hasPerf:has('perf'),hasOrders:has('orders'),hasDel:has('del_pct'),
+    hasPickup:has('pickup_pct'),hasDelay:has('delay'),hasBad:has('bad'),
+    hasCancel:has('cancel'),hasHandling:has('handling'),
+  };
 }
 
-function pct(v){return(v*100).toFixed(1)+'%'}
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function pct(v){return v===null||v===undefined?'—':(v*100).toFixed(1)+'%'}
 function fmtN(v){return v>=1000?(v/1000).toFixed(1)+'K':v}
-function perfColor(v){if(v>=0.85)return'var(--green)';if(v>=0.7)return'var(--blue)';if(v>=0.5)return'var(--amber)';return'var(--red)';}
-function perfPill(v){if(v>=0.85)return'green';if(v>=0.7)return'blue';if(v>=0.5)return'amber';return'red';}
-
-function deltaHtml(curr,prev,better){
-  if(prev===null||prev===undefined)return'';
-  const d=curr-prev;
-  if(Math.abs(d)<0.0001)return'<span class="kpi-delta neu">— بلا تغيير</span>';
-  const up=d>0;
-  const good=better==='up'?up:!up;
-  const cls=good?'up':'dn';
-  const arrow=up?'▲':'▼';
-  const val=typeof curr==='number'&&curr<2?(d*100).toFixed(1)+'pp':(Math.abs(d/prev)*100).toFixed(1)+'%';
-  return`<span class="kpi-delta ${cls}">${arrow} ${val}</span>`;
+function pc(v){if(v===null)return'var(--text3)';if(v>=0.85)return'var(--green)';if(v>=0.7)return'var(--blue)';if(v>=0.5)return'var(--amber)';return'var(--red)';}
+function pp(v){if(v===null)return'x';if(v>=0.85)return'g';if(v>=0.7)return'b';if(v>=0.5)return'a';return'r';}
+function dH(curr,prev,better){
+  if(prev===null||prev===undefined||curr===null)return'';
+  const d=curr-prev;if(Math.abs(d)<0.0001)return'<span class="kpi-sub neu">— بلا تغيير</span>';
+  const up=d>0;const good=better==='up'?up:!up;
+  return`<span class="kpi-sub ${good?'up':'dn'}">${up?'▲':'▼'} ${(Math.abs(d/Math.abs(prev))*100).toFixed(1)}%</span>`;
 }
 
-function render(){
-  const c=agg(currData);
-  const p=prevData?agg(prevData):null;
-  if(!c){
-    document.getElementById('main').innerHTML=`
-    <div class="welcome">
-      <div style="font-size:48px">⚡</div>
-      <h1>OPS<span style="color:var(--green)">.</span>INTEL Dashboard</h1>
-      <p>ارفع ملف البيانات الحالي للبدء. ارفع ملف الفترة السابقة لتفعيل نظام المقارنة التفصيلي.</p>
-      <div class="welcome-btns">
-        <label><input type="file" id="w-curr" accept=".xlsx,.xls,.csv"><span style="font-size:28px">📊</span><span style="font-weight:600;color:var(--text)">الفترة الحالية</span><span>xlsx / csv</span></label>
-        <label class="prev"><input type="file" id="w-prev" accept=".xlsx,.xls,.csv"><span style="font-size:28px">📅</span><span style="font-weight:600;color:var(--text)">الفترة السابقة</span><span>اختياري للمقارنة</span></label>
+// ══════════════════════════════════════════════
+//  RENDER MAPPING UI
+// ══════════════════════════════════════════════
+function renderMapUI(fileInfo, which){
+  const map=detectMap(fileInfo.headers);
+  const optionsHtml='<option value="">— لا يوجد —</option>'+fileInfo.headers.map(h=>`<option value="${h}">${h}</option>`).join('');
+  const autoCount=FIELDS.filter(f=>map[f.key]&&map[f.key].auto).length;
+  const main=document.getElementById('main');
+  main.innerHTML=`
+  <div class="map-card">
+    <div class="map-head">
+      <div>
+        <span class="pt">🔍 ربط الأعمدة التلقائي</span>
+        <span style="font-size:11px;color:var(--text2);margin-right:10px">الملف: <strong style="color:var(--text)">${fileInfo.name}</strong> — ${fileInfo.raw.length} صف — ${fileInfo.headers.length} عمود</span>
       </div>
-    </div>`;
-    document.getElementById('w-curr').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'curr')};
-    document.getElementById('w-prev').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'prev')};
-    return;
+      <span class="info-chip">تم اكتشاف ${autoCount}/${FIELDS.length} تلقائياً</span>
+    </div>
+    <div class="map-grid" id="map-grid">
+      ${FIELDS.map(f=>{
+        const m=map[f.key];
+        const hasCol=m&&m.col;
+        return`<div class="map-row">
+          <div class="map-field">${f.label}<sub>${f.desc}</sub></div>
+          <select class="map-select" id="ms-${f.key}" onchange="onMapChange()">
+            ${optionsHtml.replace(`value="${hasCol?m.col:''}"`,`value="${hasCol?m.col:''}" selected`)}
+          </select>
+          <span class="map-badge ${hasCol?(m.auto?'auto':'manual'):'miss'}" id="mb-${f.key}">${hasCol?(m.auto?'تلقائي':'يدوي'):'غير موجود'}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text2)">راجع الربط وعدّل أي عمود يدوياً ثم اضغط تحليل</span>
+      <button class="btn-analyze" onclick="confirmMap('${which}')">⚡ تحليل البيانات</button>
+    </div>
+  </div>`;
+  // store for later
+  window._pendingFile={fileInfo,which};
+  // set selects to detected values
+  FIELDS.forEach(f=>{
+    const sel=document.getElementById('ms-'+f.key);
+    const m=map[f.key];
+    if(sel&&m&&m.col)sel.value=m.col;
+  });
+}
+
+window.onMapChange=function(){
+  FIELDS.forEach(f=>{
+    const sel=document.getElementById('ms-'+f.key);
+    const badge=document.getElementById('mb-'+f.key);
+    if(!sel||!badge)return;
+    const v=sel.value;
+    if(v){badge.textContent='يدوي';badge.className='map-badge manual';}
+    else{badge.textContent='غير موجود';badge.className='map-badge miss';}
+  });
+};
+
+window.confirmMap=function(which){
+  const map={};
+  FIELDS.forEach(f=>{
+    const sel=document.getElementById('ms-'+f.key);
+    map[f.key]={col:sel?sel.value:'',auto:false};
+  });
+  const {fileInfo}=window._pendingFile;
+  const rows=extractRows(fileInfo.raw,map);
+  if(which==='curr'){
+    currRaw=fileInfo.raw;currMap=map;currAgg=buildAgg(rows,map);
+    document.getElementById('ic-curr').textContent='✅';
+    document.getElementById('tx-curr').textContent=fileInfo.name.substring(0,20);
+    document.getElementById('lbl-curr').classList.add('loaded');
+  } else {
+    prevRaw=fileInfo.raw;prevMap=map;prevAgg=buildAgg(rows,map);
+    document.getElementById('ic-prev').textContent='✅';
+    document.getElementById('tx-prev').textContent=fileInfo.name.substring(0,20);
+    document.getElementById('lbl-prev').classList.add('loaded');
   }
+  document.getElementById('sdot').className='dot live';
+  document.getElementById('slbl').textContent=(currAgg?currAgg.n+' سجل':'')+( prevAgg?' | مقارنة مفعّلة':'');
+  activeTab='overview';
+  renderDash();
+};
 
-  document.getElementById('status-dot').className='status-dot live';
-  document.getElementById('status-label').textContent=c.uniqueCap+' كابتن | '+c.uniqueCity+' مدينة | '+c.uniqueStore+' متجر';
-
+// ══════════════════════════════════════════════
+//  RENDER DASHBOARD
+// ══════════════════════════════════════════════
+function renderDash(){
+  const c=currAgg,p=prevAgg;
+  if(!c){renderWelcome();return;}
   const tabs=[
-    {k:'overview',lbl:'لمحة عامة'},
-    {k:'cities',lbl:'المدن'},
-    {k:'stores',lbl:'المتاجر'},
-    {k:'captains',lbl:'الكباتن'},
-    {k:'fraud',lbl:'🚨 الاحتيال'},
-    {k:'compare',lbl:'المقارنة'+(p?' <span class="compare-badge">مفعّل</span>':'')}
+    {k:'overview',l:'لمحة عامة'},
+    {k:'cities',l:'المدن'},
+    {k:'stores',l:'المتاجر'},
+    {k:'entities',l:'أداء الكباتن'},
+    {k:'alerts',l:'🚨 التنبيهات'+(c.alerts.filter(a=>a.type==='r').length?` (${c.alerts.filter(a=>a.type==='r').length})`:'')},
+    {k:'compare',l:'المقارنة'+(p?' <span class="compare-badge">ON</span>':'')}
   ];
-
-  const tabBar=`<div class="tab-bar">${tabs.map(t=>`<button class="tab${t.k===activeTab?' active':''}" onclick="switchTab('${t.k}')">${t.lbl}</button>`).join('')}</div>`;
-
+  const tabBar=`<div class="tab-bar">${tabs.map(t=>`<button class="tab${t.k===activeTab?' active':''}" onclick="sw('${t.k}')">${t.l}</button>`).join('')}</div>`;
   let body='';
 
-  if(activeTab==='overview'){
-    body=`
-    <div class="kpi-grid">
-      <div class="kpi blue"><div class="kpi-label">إجمالي الطلبات</div><div class="kpi-value">${fmtN(c.totOrders)}</div>${deltaHtml(c.totOrders,p?p.totOrders:null,'up')}</div>
-      <div class="kpi ${c.avgPerf>=0.7?'green':c.avgPerf>=0.5?'amber':'red'}"><div class="kpi-label">متوسط الأداء</div><div class="kpi-value">${pct(c.avgPerf)}</div>${deltaHtml(c.avgPerf,p?p.avgPerf:null,'up')}</div>
-      <div class="kpi ${c.avgDel>=0.7?'green':c.avgDel>=0.5?'amber':'red'}"><div class="kpi-label">التوصيل الناجح</div><div class="kpi-value">${pct(c.avgDel)}</div>${deltaHtml(c.avgDel,p?p.avgDel:null,'up')}</div>
-      <div class="kpi ${c.avgPickup>=0.7?'green':c.avgPickup>=0.5?'amber':'red'}"><div class="kpi-label">الاستلام الناجح</div><div class="kpi-value">${pct(c.avgPickup)}</div>${deltaHtml(c.avgPickup,p?p.avgPickup:null,'up')}</div>
-      <div class="kpi ${c.avgDelay<=5?'green':c.avgDelay<=10?'amber':'red'}"><div class="kpi-label">متوسط التأخير</div><div class="kpi-value">${c.avgDelay.toFixed(1)}<span style="font-size:12px;font-weight:400"> دق</span></div>${deltaHtml(c.avgDelay,p?p.avgDelay:null,'dn')}</div>
-      <div class="kpi ${c.avgBad<=1?'green':c.avgBad<=2?'amber':'red'}"><div class="kpi-label">الأيام السيئة</div><div class="kpi-value">${c.avgBad.toFixed(2)}</div>${deltaHtml(c.avgBad,p?p.avgBad:null,'dn')}</div>
-      <div class="kpi red"><div class="kpi-label">صفر توصيل</div><div class="kpi-value">${c.zeroDel}</div>${deltaHtml(c.zeroDel,p?p.zeroDel:null,'dn')}<div class="kpi-delta neu">${fmtN(c.zeroDelOrders)} طلب ضائع</div></div>
-      <div class="kpi ${c.elite>=100?'green':'amber'}"><div class="kpi-label">كباتن النخبة</div><div class="kpi-value">${c.elite}</div>${deltaHtml(c.elite,p?p.elite:null,'up')}</div>
-      <div class="kpi red"><div class="kpi-label">أداء &lt;10% (خطر)</div><div class="kpi-value">${c.critical}</div>${deltaHtml(c.critical,p?p.critical:null,'dn')}</div>
-      <div class="kpi amber"><div class="kpi-label">5+ أيام سيئة</div><div class="kpi-value">${c.highBad}</div>${deltaHtml(c.highBad,p?p.highBad:null,'dn')}</div>
-      <div class="kpi red"><div class="kpi-label">إشارة احتيال #1</div><div class="kpi-value">${c.fraud1}</div>${deltaHtml(c.fraud1,p?p.fraud1:null,'dn')}</div>
-      <div class="kpi amber"><div class="kpi-label">إشارة احتيال #2</div><div class="kpi-value">${c.fraud2}</div>${deltaHtml(c.fraud2,p?p.fraud2:null,'dn')}</div>
-    </div>
-    <div class="panel" style="margin-top:14px">
-      <div class="panel-head"><span class="panel-title">توزيع شرائح الأداء</span><span style="font-size:11px;color:var(--text3)">${c.n} سجل</span></div>
-      <div class="panel-body">
-        <div class="seg-bar">
-          ${[{k:'critical',c:'#ff4d6a'},{k:'poor',c:'#f5a623'},{k:'avg',c:'#555b6a'},{k:'good',c:'#4d9fff'},{k:'elite',c:'#00e5a0'}].map(s=>{
-            const w=(c.segs[s.k]/c.n*100).toFixed(1);
-            return`<div class="seg-piece" style="flex:${w};background:${s.c}22;border:1px solid ${s.c}44;color:${s.c}">${w>4?c.segs[s.k]:''}</div>`;
-          }).join('')}
-        </div>
-        <div class="seg-legend">
-          ${[{k:'critical',c:'#ff4d6a',l:'بالغ الخطورة &lt;33%'},{k:'poor',c:'#f5a623',l:'ضعيف 33-50%'},{k:'avg',c:'#555b6a',l:'متوسط 50-70%'},{k:'good',c:'#4d9fff',l:'جيد 70-85%'},{k:'elite',c:'#00e5a0',l:'نخبة &gt;85%'}].map(s=>`<div class="seg-item"><div class="seg-dot" style="background:${s.c}"></div>${s.l}: <strong style="color:var(--text)">${c.segs[s.k]}</strong></div>`).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="two-col" style="margin-top:12px">
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 أفضل 6 مدن أداءً</span></div><div class="panel-body">
-        ${c.cities.slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
-      </div></div>
-      <div class="panel"><div class="panel-head"><span class="panel-title">🔴 أسوأ 6 مدن أداءً</span></div><div class="panel-body">
-        ${[...c.cities].sort((a,b)=>a.perf-b.perf).slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
-      </div></div>
-    </div>
-    <div class="two-col" style="margin-top:12px">
-      <div class="panel"><div class="panel-head"><span class="panel-title">🏪 أفضل 6 متاجر أداءً</span></div><div class="panel-body">
-        ${[...c.stores].sort((a,b)=>b.perf-a.perf).slice(0,6).map(s=>`<div class="bar-row"><span class="br-label" title="${s.store}" style="width:90px;font-size:10px">${s.store}</span><div class="br-track"><div class="br-fill" style="width:${(s.perf*100).toFixed(0)}%;background:${perfColor(s.perf)}"></div></div><span class="br-val">${pct(s.perf)}</span></div>`).join('')}
-      </div></div>
-      <div class="panel"><div class="panel-head"><span class="panel-title">🚨 أسوأ 6 متاجر أداءً</span></div><div class="panel-body">
-        ${c.stores.slice(0,6).map(s=>`<div class="bar-row"><span class="br-label" title="${s.store}" style="width:90px;font-size:10px">${s.store}</span><div class="br-track"><div class="br-fill" style="width:${(s.perf*100).toFixed(0)}%;background:${perfColor(s.perf)}"></div></div><span class="br-val">${pct(s.perf)}</span><span class="br-delta" style="font-size:10px;color:var(--text3)">${s.n}k</span></div>`).join('')}
-      </div></div>
-    </div>`;
-  }
-
-  else if(activeTab==='cities'){
-    const pm={};if(p)p.cities.forEach(ci=>pm[ci.city]=ci);
-    body=`<div class="panel"><div class="panel-head"><span class="panel-title">أداء جميع المدن (${c.uniqueCity})</span>${p?'<span class="compare-badge">مقارنة مفعّلة</span>':''}</div>
-    <div class="scroll-x"><table class="data-table"><thead><tr>
-      <th>المدينة</th><th>كباتن</th><th>طلبات</th><th>الأداء</th>${p?'<th>Δ أداء</th>':''}<th>التوصيل</th>${p?'<th>Δ توصيل</th>':''}<th>التأخير</th><th>أيام سيئة</th><th>الحالة</th>
-    </tr></thead><tbody>
-    ${c.cities.map(ci=>{
-      const prev=pm[ci.city];
-      const dp=prev?ci.perf-prev.perf:null;
-      const dd=prev?ci.del-prev.del:null;
-      return`<tr>
-        <td style="font-weight:600;color:var(--text)">${ci.city}</td>
-        <td>${ci.n}</td><td>${ci.orders}</td>
-        <td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td>
-        ${p?`<td class="${dp===null?'no-comp':dp>0?'green-txt':'red-txt'}">${dp===null?'—':(dp>0?'▲ ':'▼ ')+pct(Math.abs(dp))}</td>`:''}
-        <td>${pct(ci.del)}</td>
-        ${p?`<td class="${dd===null?'no-comp':dd>0?'green-txt':'red-txt'}">${dd===null?'—':(dd>0?'▲ ':'▼ ')+pct(Math.abs(dd))}</td>`:''}
-        <td class="${ci.delay>10?'red-txt':ci.delay>5?'amber-txt':''}">${ci.delay} دق</td>
-        <td class="${ci.bad>3?'red-txt':ci.bad>2?'amber-txt':''}">${ci.bad}</td>
-        <td>${ci.perf>=0.7?'<span class="pill green">جيد</span>':ci.perf>=0.5?'<span class="pill amber">متوسط</span>':'<span class="pill red">تدخل</span>'}</td>
-      </tr>`;
-    }).join('')}
-    </tbody></table></div></div>`;
-  }
-
-  else if(activeTab==='stores'){
-    const pm={};if(p)p.stores.forEach(s=>pm[s.store]=s);
-    body=`<div class="panel"><div class="panel-head"><span class="panel-title">أسوأ 25 متجراً (أولوية التدخل)</span>${p?'<span class="compare-badge">مقارنة مفعّلة</span>':''}</div>
-    <div class="scroll-x"><table class="data-table"><thead><tr>
-      <th>المتجر</th><th>كباتن</th><th>طلبات</th><th>الأداء</th>${p?'<th>Δ أداء</th>':''}<th>التوصيل</th><th>التأخير</th><th>أيام سيئة</th><th>الأولوية</th>
-    </tr></thead><tbody>
-    ${c.stores.slice(0,25).map(s=>{
-      const prev=pm[s.store];
-      const dp=prev?s.perf-prev.perf:null;
-      return`<tr>
-        <td style="font-weight:600;color:var(--text);font-size:10px">${s.store}</td>
-        <td>${s.n}</td><td>${s.orders}</td>
-        <td><span class="pill ${perfPill(s.perf)}">${pct(s.perf)}</span></td>
-        ${p?`<td class="${dp===null?'no-comp':dp>0?'green-txt':'red-txt'}">${dp===null?'جديد':(dp>0?'▲ ':'▼ ')+pct(Math.abs(dp))}</td>`:''}
-        <td>${pct(s.del)}</td>
-        <td class="${s.delay>10?'red-txt':s.delay>5?'amber-txt':''}">${s.delay} دق</td>
-        <td class="${s.bad>3?'red-txt':s.bad>2?'amber-txt':''}">${s.bad}</td>
-        <td>${s.perf<0.45?'<span class="pill red">🔴 عاجل</span>':s.perf<0.55?'<span class="pill amber">🟡 مراقبة</span>':'<span class="pill blue">🔵 متابعة</span>'}</td>
-      </tr>`;
-    }).join('')}
-    </tbody></table></div></div>`;
-  }
-
-  else if(activeTab==='captains'){
-    const allCities=[...new Set(c.raw.map(r=>r.city))].sort();
-    const allStores=[...new Set(c.raw.map(r=>r.store))].sort();
-    body=`
-    <div class="filter-row">
-      <input class="filter-input" id="cap-q" placeholder="🔍 ابحث بالاسم أو الـ ID أو المتجر..." oninput="filterCaps()" style="min-width:240px">
-      <select class="filter-select" id="cap-city" onchange="onCityChange()">
-        <option value="">كل المدن</option>
-        ${allCities.map(ci=>`<option>${ci}</option>`).join('')}
-      </select>
-      <select class="filter-select" id="cap-store" onchange="filterCaps()">
-        <option value="">كل المتاجر</option>
-        ${allStores.map(s=>`<option>${s}</option>`).join('')}
-      </select>
-      <select class="filter-select" id="cap-seg" onchange="filterCaps()">
-        <option value="">كل الشرائح</option>
-        <option value="critical">بالغ الخطورة (&lt;33%)</option>
-        <option value="poor">ضعيف (33-50%)</option>
-        <option value="avg">متوسط (50-70%)</option>
-        <option value="good">جيد (70-85%)</option>
-        <option value="elite">نخبة (&gt;85%)</option>
-      </select>
-      <select class="filter-select" id="cap-sort" onchange="filterCaps()">
-        <option value="perf_asc">الأسوأ أداءً أولاً</option>
-        <option value="perf_desc">الأفضل أداءً أولاً</option>
-        <option value="orders">أعلى طلبات</option>
-        <option value="delay">أعلى تأخير</option>
-        <option value="bad">أكثر أياماً سيئة</option>
-      </select>
-    </div>
-    <div class="panel">
-      <div class="panel-head"><span class="panel-title" id="cap-count">تحميل...</span></div>
-      <div class="scroll-x"><table class="data-table"><thead><tr>
-        <th>ID</th><th>الاسم</th><th>المدينة</th><th>المتجر</th>
-        <th>طلبات</th><th>الأداء</th><th>الاستلام</th><th>التوصيل</th><th>التأخير</th><th>أيام سيئة</th><th>الحالة</th>
-      </tr></thead><tbody id="cap-tbody"></tbody></table></div>
-    </div>`;
-  }
-
-  else if(activeTab==='fraud'){
-    const f1=c.raw.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).sort((a,b)=>b.orders-a.orders);
-    const f2=c.raw.filter(r=>r.handling<0.5&&r.orders>=5).sort((a,b)=>b.orders-a.orders);
-    const f3=c.raw.filter(r=>r.max_delay>90);
-    const f4=c.raw.filter(r=>r.bad>=5&&r.orders>=5).sort((a,b)=>b.bad-a.bad);
-    const f5=c.raw.filter(r=>r.perf<0.1&&r.orders>=5).sort((a,b)=>a.perf-b.perf);
-    body=`
-    <div class="panel"><div class="panel-head"><span class="panel-title">🚨 لوحة كشف الاحتيال والشذوذات</span></div>
-    <div class="signal-list">
-      <div class="signal"><div class="sig-badge red">FRAUD-1</div><div><div class="sig-title">استلام عالي + صفر توصيل — ${f1.length} كابتن</div><div class="sig-desc">pickup ≥ 80% مع delivery = 0% في 5+ طلبات. المشتبه الأول بالتلاعب.</div></div></div>
-      <div class="signal"><div class="sig-badge red">FRAUD-2</div><div><div class="sig-title">وقت معالجة أقل من 30 ثانية — ${f2.length} كابتن</div><div class="sig-desc">التوصيل الحقيقي لا يقل عن دقيقة. أقل من ذلك = توصيل وهمي محتمل.</div></div></div>
-      <div class="signal"><div class="sig-badge amber">DELAY-1</div><div><div class="sig-title">تأخير أقصى فوق 90 دقيقة — ${f3.length} كباتن</div><div class="sig-desc">يجب مراجعة مسار GPS الكابتن في تلك الفترة تحديداً.</div></div></div>
-      <div class="signal"><div class="sig-badge amber">BAD-DAYS</div><div><div class="sig-title">5+ أيام سيئة متراكمة — ${f4.length} كابتن</div><div class="sig-desc">أداء سيئ ممتد. يحتاج تدخل تدريبي فوري أو إجراء تأديبي.</div></div></div>
-      <div class="signal"><div class="sig-badge red">CRIT-ZERO</div><div><div class="sig-title">أداء أقل من 10% — ${f5.length} كابتن</div><div class="sig-desc">غياب تشغيلي كامل. يجب تجميد الحسابات والتحقيق الفوري.</div></div></div>
-    </div></div>
-    <div class="panel" style="margin-top:12px">
-      <div class="panel-head"><span class="panel-title">قائمة FRAUD-1 المشتبه بهم (أعلى ${Math.min(20,f1.length)} حسب الطلبات)</span></div>
-      <div class="scroll-x"><table class="data-table"><thead><tr><th>ID</th><th>الاسم</th><th>المدينة</th><th>المتجر</th><th>طلبات</th><th>استلام</th><th>توصيل</th><th>تأخير</th><th>أيام سيئة</th></tr></thead><tbody>
-      ${f1.slice(0,20).map(r=>`<tr>
-        <td style="color:var(--red);font-weight:600">${r.id}</td>
-        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name||'—'}</td>
-        <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
-        <td>${r.orders}</td>
-        <td class="green-txt">${pct(r.pickup_pct)}</td>
-        <td class="red-txt">${pct(r.del_pct)}</td>
-        <td class="${r.delay>20?'red-txt':''}">${r.delay>0?r.delay.toFixed(1):'—'}</td>
-        <td class="${r.bad>=5?'red-txt':'amber-txt'}">${r.bad.toFixed(1)}</td>
-      </tr>`).join('')}
-      </tbody></table></div>
-    </div>
-    <div class="panel" style="margin-top:12px">
-      <div class="panel-head"><span class="panel-title">كباتن CRIT-ZERO — أداء أقل من 10%</span></div>
-      <div class="scroll-x"><table class="data-table"><thead><tr><th>ID</th><th>المدينة</th><th>المتجر</th><th>طلبات</th><th>الأداء</th><th>استلام</th><th>توصيل</th><th>أيام سيئة</th></tr></thead><tbody>
-      ${f5.slice(0,15).map(r=>`<tr>
-        <td style="color:var(--red);font-weight:600">${r.id}</td>
-        <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
-        <td>${r.orders}</td>
-        <td><span class="pill red">${pct(r.perf)}</span></td>
-        <td class="${r.pickup_pct===0?'red-txt':''}">${pct(r.pickup_pct)}</td>
-        <td class="red-txt">${pct(r.del_pct)}</td>
-        <td class="${r.bad>=5?'red-txt':'amber-txt'}">${r.bad.toFixed(1)}</td>
-      </tr>`).join('')}
-      </tbody></table></div>
-    </div>`;
-  }
-
-  else if(activeTab==='compare'){
-    if(!p){
-      body=`<div class="panel"><div class="empty-state"><div style="font-size:40px;margin-bottom:12px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:8px">لم يتم رفع بيانات الفترة السابقة</div>ارفع ملف الفترة السابقة من شريط الأدوات أعلاه</div></div>`;
-    } else {
-      const pm={};p.cities.forEach(ci=>pm[ci.city]=ci);
-      const movers=c.cities.map(ci=>{const prev=pm[ci.city];return{...ci,dp:prev?ci.perf-prev.perf:null,pp:prev?prev.perf:null};}).filter(ci=>ci.dp!==null).sort((a,b)=>b.dp-a.dp);
-      body=`
-      <div class="kpi-grid">
-        <div class="kpi ${c.avgPerf>p.avgPerf?'green':'red'}"><div class="kpi-label">الأداء العام</div><div class="kpi-value">${pct(c.avgPerf)}</div><div class="kpi-delta ${c.avgPerf>p.avgPerf?'up':'dn'}">${c.avgPerf>p.avgPerf?'▲':'▼'} (كان ${pct(p.avgPerf)})</div></div>
-        <div class="kpi ${c.avgDel>p.avgDel?'green':'red'}"><div class="kpi-label">التوصيل الناجح</div><div class="kpi-value">${pct(c.avgDel)}</div><div class="kpi-delta ${c.avgDel>p.avgDel?'up':'dn'}">${c.avgDel>p.avgDel?'▲':'▼'} (كان ${pct(p.avgDel)})</div></div>
-        <div class="kpi ${c.fraud1<p.fraud1?'green':'red'}"><div class="kpi-label">احتيال FRAUD-1</div><div class="kpi-value">${c.fraud1}</div><div class="kpi-delta ${c.fraud1<p.fraud1?'up':'dn'}">${c.fraud1<p.fraud1?'▼ تحسن':'▲ تدهور'} (كان ${p.fraud1})</div></div>
-        <div class="kpi ${c.zeroDel<p.zeroDel?'green':'red'}"><div class="kpi-label">صفر توصيل</div><div class="kpi-value">${c.zeroDel}</div><div class="kpi-delta ${c.zeroDel<p.zeroDel?'up':'dn'}">${c.zeroDel<p.zeroDel?'▼ انخفض':'▲ ارتفع'} (كان ${p.zeroDel})</div></div>
-        <div class="kpi ${c.elite>p.elite?'green':'amber'}"><div class="kpi-label">كباتن النخبة</div><div class="kpi-value">${c.elite}</div><div class="kpi-delta ${c.elite>p.elite?'up':'dn'}">${c.elite>p.elite?'▲':' ▼'} ${Math.abs(c.elite-p.elite)} (كان ${p.elite})</div></div>
-        <div class="kpi ${c.avgDelay<p.avgDelay?'green':'red'}"><div class="kpi-label">متوسط التأخير</div><div class="kpi-value">${c.avgDelay.toFixed(1)} دق</div><div class="kpi-delta ${c.avgDelay<p.avgDelay?'up':'dn'}">${c.avgDelay<p.avgDelay?'▼ تحسن':'▲ تدهور'} (كان ${p.avgDelay.toFixed(1)})</div></div>
-      </div>
-      <div class="two-col" style="margin-top:14px">
-        <div class="panel"><div class="panel-head"><span class="panel-title">🚀 أكثر المدن تحسناً</span></div><div class="panel-body">
-          ${movers.slice(0,7).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--green)"></div></div><span class="br-val green-txt">${pct(ci.perf)}</span><span class="br-delta green-txt">▲${pct(ci.dp)}</span></div>`).join('')}
-        </div></div>
-        <div class="panel"><div class="panel-head"><span class="panel-title">📉 أكثر المدن تدهوراً</span></div><div class="panel-body">
-          ${[...movers].sort((a,b)=>a.dp-b.dp).slice(0,7).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--red)"></div></div><span class="br-val red-txt">${pct(ci.perf)}</span><span class="br-delta red-txt">▼${pct(Math.abs(ci.dp))}</span></div>`).join('')}
-        </div></div>
-      </div>
-      <div class="panel" style="margin-top:12px"><div class="panel-head"><span class="panel-title">مقارنة تفصيلية — كل المدن</span></div>
-      <div class="scroll-x"><table class="data-table"><thead><tr><th>المدينة</th><th>الأداء الحالي</th><th>الأداء السابق</th><th>Δ أداء</th><th>التوصيل الحالي</th><th>التوصيل السابق</th><th>Δ توصيل</th><th>Δ تأخير</th></tr></thead><tbody>
-      ${c.cities.map(ci=>{
-        const prev=pm[ci.city];
-        if(!prev)return`<tr><td style="color:var(--text)">${ci.city}</td><td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td><td colspan="6" class="no-comp">مدينة جديدة — لا بيانات سابقة</td></tr>`;
-        const dp=ci.perf-prev.perf;
-        const dd=ci.del-prev.del;
-        const dly=ci.delay-prev.delay;
-        return`<tr>
-          <td style="font-weight:600;color:var(--text)">${ci.city}</td>
-          <td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td>
-          <td><span class="pill ${perfPill(prev.perf)}">${pct(prev.perf)}</span></td>
-          <td class="${dp>0?'green-txt':'red-txt'}">${dp>0?'▲ ':'▼ '}${pct(Math.abs(dp))}</td>
-          <td>${pct(ci.del)}</td><td>${pct(prev.del)}</td>
-          <td class="${dd>0?'green-txt':'red-txt'}">${dd>0?'▲':'▼'}${pct(Math.abs(dd))}</td>
-          <td class="${dly<0?'green-txt':dly>2?'red-txt':''}">${dly>0?'+':''}${dly.toFixed(1)} دق</td>
-        </tr>`;
-      }).join('')}
-      </tbody></table></div></div>`;
-    }
-  }
+  if(activeTab==='overview') body=renderOverview(c,p);
+  else if(activeTab==='cities') body=renderCities(c,p);
+  else if(activeTab==='stores') body=renderStores(c,p);
+  else if(activeTab==='entities') body=renderEntities(c);
+  else if(activeTab==='alerts') body=renderAlerts(c);
+  else if(activeTab==='compare') body=renderCompare(c,p);
 
   document.getElementById('main').innerHTML=tabBar+body;
-  if(activeTab==='captains') filterCaps();
+  if(activeTab==='entities')filterEnts();
 }
 
-window.switchTab=function(t){activeTab=t;render();}
+function renderOverview(c,p){
+  const kpis=[];
+  if(c.totOrders>0)kpis.push({l:'إجمالي السجلات / الطلبات',v:fmtN(c.totOrders)||c.n,cl:'b',d:dH(c.totOrders,p?p.totOrders:null,'up')});
+  else kpis.push({l:'إجمالي السجلات',v:c.n,cl:'b',d:''});
+  if(c.hasPerf)kpis.push({l:'متوسط الأداء (Weighted)',v:pct(c.avgPerf),cl:c.avgPerf>=0.7?'g':c.avgPerf>=0.5?'a':'r',d:dH(c.avgPerf,p?p.avgPerf:null,'up')});
+  if(c.hasDel)kpis.push({l:'التوصيل الناجح',v:pct(c.avgDel),cl:c.avgDel>=0.7?'g':c.avgDel>=0.5?'a':'r',d:dH(c.avgDel,p?p.avgDel:null,'up')});
+  if(c.hasPickup)kpis.push({l:'الاستلام الناجح',v:pct(c.avgPickup),cl:c.avgPickup>=0.7?'g':c.avgPickup>=0.5?'a':'r',d:dH(c.avgPickup,p?p.avgPickup:null,'up')});
+  if(c.hasDelay)kpis.push({l:'متوسط التأخير',v:c.avgDelay!==null?c.avgDelay.toFixed(1)+' دق':'—',cl:c.avgDelay<=5?'g':c.avgDelay<=10?'a':'r',d:dH(c.avgDelay,p?p.avgDelay:null,'dn')});
+  if(c.hasBad)kpis.push({l:'الأيام السيئة',v:c.avgBad!==null?c.avgBad.toFixed(2):'—',cl:c.avgBad<=1?'g':c.avgBad<=2?'a':'r',d:dH(c.avgBad,p?p.avgBad:null,'dn')});
+  if(c.hasDel&&c.zeroDel>0)kpis.push({l:'سجلات بصفر توصيل',v:c.zeroDel,cl:'r',d:dH(c.zeroDel,p?p.zeroDel:null,'dn')});
+  if(c.hasPerf)kpis.push({l:'كباتن النخبة (>85%)',v:c.elite,cl:'g',d:dH(c.elite,p?p.elite:null,'up')});
+  if(c.hasPerf&&c.critical>0)kpis.push({l:'أداء بالغ الخطورة (<10%)',v:c.critical,cl:'r',d:dH(c.critical,p?p.critical:null,'dn')});
+  if(c.hasBad&&c.highBad>0)kpis.push({l:'5+ أيام سيئة',v:c.highBad,cl:'a',d:''});
+  if(c.hasCancel)kpis.push({l:'معدل الإلغاء',v:pct(c.avgCancel),cl:c.avgCancel<0.05?'g':c.avgCancel<0.1?'a':'r',d:dH(c.avgCancel,p?p.avgCancel:null,'dn')});
+  if(c.hasHandling)kpis.push({l:'متوسط وقت العميل',v:c.avgHandling!==null?c.avgHandling.toFixed(1)+' دق':'—',cl:'b',d:''});
 
-window.onCityChange=function(){
-  if(!currData)return;
-  const city=(document.getElementById('cap-city')||{}).value||'';
-  const storeEl=document.getElementById('cap-store');
-  if(storeEl){
-    const stores=city?[...new Set(currData.filter(r=>r.city===city).map(r=>r.store))].sort():[...new Set(currData.map(r=>r.store))].sort();
-    storeEl.innerHTML='<option value="">كل المتاجر</option>'+stores.map(s=>`<option>${s}</option>`).join('');
+  let out=`<div class="kpi-grid">${kpis.map(k=>`<div class="kpi ${k.cl}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div>${k.d}</div>`).join('')}</div>`;
+
+  // segments
+  if(c.segs){
+    const total=Object.values(c.segs).reduce((s,v)=>s+v,0);
+    out+=`<div class="panel" style="margin-top:12px"><div class="ph"><span class="pt">توزيع شرائح الأداء</span><span style="font-size:11px;color:var(--text3)">${c.n} سجل</span></div><div class="pb">
+    <div class="seg-bar">
+      ${[{k:'critical',c:'#e8334a'},{k:'poor',c:'#d4891a'},{k:'avg',c:'#555b6a'},{k:'good',c:'#2b7fd4'},{k:'elite',c:'#00c47a'}].map(s=>{const w=(c.segs[s.k]/total*100).toFixed(1);return`<div class="seg-p" style="flex:${w};background:${s.c}22;border:1px solid ${s.c}44;color:${s.c}">${w>4?c.segs[s.k]:''}</div>`;}).join('')}
+    </div>
+    <div class="seg-leg">
+      ${[{k:'critical',c:'#e8334a',l:'خطورة <33%'},{k:'poor',c:'#d4891a',l:'ضعيف 33-50%'},{k:'avg',c:'#555b6a',l:'متوسط 50-70%'},{k:'good',c:'#2b7fd4',l:'جيد 70-85%'},{k:'elite',c:'#00c47a',l:'نخبة >85%'}].map(s=>`<div class="seg-i"><div class="seg-d" style="background:${s.c}"></div>${s.l}: <strong style="color:var(--text)">${c.segs[s.k]}</strong></div>`).join('')}
+    </div></div></div>`;
   }
-  filterCaps();
+
+  // top/bottom bars
+  const hasCities=c.cities.length>1;
+  const hasStores=c.stores.length>1;
+  if(hasCities||hasStores){
+    out+=`<div class="${hasCities&&hasStores?'two':'three'}" style="margin-top:12px">`;
+    if(hasCities){
+      out+=`<div class="panel"><div class="ph"><span class="pt">🏆 أفضل مدن</span></div><div class="pb">
+        ${c.cities.slice(0,6).map(ci=>`<div class="br"><span class="br-l" title="${ci.city}">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${ci.perf!==null?(ci.perf*100).toFixed(0):'0'}%;background:${pc(ci.perf)}"></div></div><span class="br-v">${pct(ci.perf)}</span></div>`).join('')}
+      </div></div>
+      <div class="panel"><div class="ph"><span class="pt">🔴 أسوأ مدن</span></div><div class="pb">
+        ${[...c.cities].sort((a,b)=>(a.perf||0)-(b.perf||0)).slice(0,6).map(ci=>`<div class="br"><span class="br-l" title="${ci.city}">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${ci.perf!==null?(ci.perf*100).toFixed(0):'0'}%;background:${pc(ci.perf)}"></div></div><span class="br-v">${pct(ci.perf)}</span></div>`).join('')}
+      </div></div>`;
+    }
+    if(hasStores){
+      out+=`<div class="panel"><div class="ph"><span class="pt">🏪 أفضل متاجر</span></div><div class="pb">
+        ${c.stores.slice(0,6).map(s=>`<div class="br"><span class="br-l" style="font-size:9px" title="${s.store}">${s.store}</span><div class="br-t"><div class="br-f" style="width:${s.perf!==null?(s.perf*100).toFixed(0):'0'}%;background:${pc(s.perf)}"></div></div><span class="br-v">${pct(s.perf)}</span></div>`).join('')}
+      </div></div>
+      <div class="panel"><div class="ph"><span class="pt">🚨 أسوأ متاجر</span></div><div class="pb">
+        ${[...c.stores].sort((a,b)=>(a.perf||0)-(b.perf||0)).slice(0,6).map(s=>`<div class="br"><span class="br-l" style="font-size:9px" title="${s.store}">${s.store}</span><div class="br-t"><div class="br-f" style="width:${s.perf!==null?(s.perf*100).toFixed(0):'0'}%;background:${pc(s.perf)}"></div></div><span class="br-v">${pct(s.perf)}</span></div>`).join('')}
+      </div></div>`;
+    }
+    out+='</div>';
+  }
+
+  // suggestions
+  if(c.suggestions.length){
+    out+=`<div class="panel" style="margin-top:12px"><div class="ph"><span class="pt">💡 اقتراحات تحسين تلقائية</span></div><div class="alerts">
+      ${c.suggestions.map((s,i)=>`<div class="alert-row"><span class="alert-badge b">#${i+1}</span><div><div class="alert-desc">${s}</div></div></div>`).join('')}
+    </div></div>`;
+  }
+  return out;
+}
+
+function renderCities(c,p){
+  const pm={};if(p)p.cities.forEach(ci=>pm[ci.city]=ci);
+  const cols=[];
+  if(c.hasPerf)cols.push({k:'perf',l:'الأداء'});
+  if(c.hasDel)cols.push({k:'del',l:'التوصيل'});
+  if(c.hasDelay)cols.push({k:'delay',l:'التأخير'});
+  if(c.hasBad)cols.push({k:'bad',l:'أيام سيئة'});
+  return`<div class="panel"><div class="ph"><span class="pt">أداء المدن (${c.cities.length})</span>${p?'<span class="compare-badge">مقارنة ON</span>':''}</div>
+  <div class="scroll-x"><table class="tbl"><thead><tr>
+    <th>المدينة</th><th>سجلات</th><th>طلبات</th>
+    ${cols.map(col=>`<th>${col.l}</th>${p?`<th>Δ ${col.l}</th>`:''}`).join('')}<th>الحالة</th>
+  </tr></thead><tbody>
+  ${c.cities.map(ci=>{
+    const prev=pm[ci.city];
+    return`<tr><td style="font-weight:600;color:var(--text)">${ci.city}</td><td>${ci.n}</td><td>${ci.orders||'—'}</td>
+    ${cols.map(col=>{
+      const v=ci[col.k];const pv=prev?prev[col.k]:null;
+      const d=pv!==null&&v!==null?v-pv:null;
+      const fmt=col.k==='delay'||col.k==='bad'?(v!==null?v.toFixed(2)+'':' —'):pct(v);
+      const cl=col.k==='perf'||col.k==='del'?pp(v):'';
+      return`<td>${cl?`<span class="pill ${cl}">${fmt}</span>`:fmt}</td>${p?`<td class="${d===null?'':d>0?(col.k==='delay'||col.k==='bad'?'r-txt':'g-txt'):(col.k==='delay'||col.k==='bad'?'g-txt':'r-txt')}">${d===null?'—':(d>0?'▲':'▼')+( col.k==='delay'||col.k==='bad'?Math.abs(d).toFixed(2):pct(Math.abs(d)))}</td>`:''}`
+    }).join('')}
+    <td>${ci.perf>=0.7?'<span class="pill g">جيد</span>':ci.perf>=0.5?'<span class="pill a">متوسط</span>':ci.perf!==null?'<span class="pill r">تدخل</span>':'<span class="pill x">—</span>'}</td>
+    </tr>`;
+  }).join('')}
+  </tbody></table></div></div>`;
+}
+
+function renderStores(c,p){
+  const pm={};if(p)p.stores.forEach(s=>pm[s.store]=s);
+  const worst=[...c.stores].sort((a,b)=>(a.perf||1)-(b.perf||1)).slice(0,30);
+  const cols=[];
+  if(c.hasPerf)cols.push({k:'perf',l:'الأداء'});
+  if(c.hasDel)cols.push({k:'del',l:'التوصيل'});
+  if(c.hasDelay)cols.push({k:'delay',l:'التأخير'});
+  if(c.hasBad)cols.push({k:'bad',l:'أيام سيئة'});
+  return`<div class="panel"><div class="ph"><span class="pt">أسوأ 30 متجراً — أولوية التدخل</span>${p?'<span class="compare-badge">مقارنة ON</span>':''}</div>
+  <div class="scroll-x"><table class="tbl"><thead><tr>
+    <th>المتجر</th><th>سجلات</th><th>طلبات</th>
+    ${cols.map(col=>`<th>${col.l}</th>${p?`<th>Δ</th>`:''}`).join('')}<th>الأولوية</th>
+  </tr></thead><tbody>
+  ${worst.map(s=>{
+    const prev=pm[s.store];
+    return`<tr><td style="font-weight:600;color:var(--text);font-size:10px">${s.store}</td><td>${s.n}</td><td>${s.orders||'—'}</td>
+    ${cols.map(col=>{
+      const v=s[col.k];const pv=prev?prev[col.k]:null;
+      const d=pv!==null&&v!==null?v-pv:null;
+      const fmt=col.k==='delay'||col.k==='bad'?(v!==null?v.toFixed(2):'—'):pct(v);
+      const cl=col.k==='perf'||col.k==='del'?pp(v):'';
+      return`<td>${cl?`<span class="pill ${cl}">${fmt}</span>`:fmt}</td>${p?`<td class="${d===null?'':d>0?(col.k==='delay'||col.k==='bad'?'r-txt':'g-txt'):(col.k==='delay'||col.k==='bad'?'g-txt':'r-txt')}">${d===null?'جديد':(d>0?'▲':'▼')+(col.k==='delay'||col.k==='bad'?Math.abs(d).toFixed(2):pct(Math.abs(d)))}</td>`:''}`
+    }).join('')}
+    <td>${s.perf<0.45?'<span class="pill r">🔴 عاجل</span>':s.perf<0.6?'<span class="pill a">🟡 مراقبة</span>':'<span class="pill b">🔵 متابعة</span>'}</td>
+    </tr>`;
+  }).join('')}
+  </tbody></table></div></div>`;
+}
+
+function renderEntities(c){
+  const cities=[...new Set(c.raw.map(r=>r.city||''))].sort();
+  const stores=[...new Set(c.raw.map(r=>r.store||''))].sort();
+  const cols=[];
+  if(c.has('id'))cols.push({k:'id',l:'المعرّف'});
+  if(c.has('name'))cols.push({k:'name',l:'الاسم'});
+  if(c.has('city'))cols.push({k:'city',l:'المدينة'});
+  if(c.has('store'))cols.push({k:'store',l:'المتجر'});
+  // date column removed
+  if(c.hasOrders)cols.push({k:'orders',l:'طلبات'});
+  if(c.hasPerf)cols.push({k:'perf',l:'الأداء'});
+  if(c.hasDel)cols.push({k:'del_pct',l:'توصيل'});
+  if(c.hasPickup)cols.push({k:'pickup_pct',l:'استلام'});
+  if(c.hasDelay)cols.push({k:'delay',l:'تأخير'});
+  if(c.hasBad)cols.push({k:'bad',l:'أيام سيئة'});
+  if(c.hasCancel)cols.push({k:'cancel',l:'إلغاء'});
+  return`
+  <div class="filter-row">
+    <input class="fi inp" id="eq" placeholder="🔍 بحث بالمعرّف / الاسم / المتجر..." oninput="filterEnts()">
+    ${cities.length>1?`<select class="fi" id="ecy" onchange="onECityChange()"><option value="">كل المدن</option>${cities.map(ci=>`<option>${ci}</option>`).join('')}</select>`:''}
+    ${stores.length>1?`<select class="fi" id="est" onchange="filterEnts()"><option value="">كل المتاجر</option>${stores.map(s=>`<option>${s}</option>`).join('')}</select>`:''}
+    ${c.hasPerf?`<select class="fi" id="eseg" onchange="filterEnts()">
+      <option value="">كل الشرائح</option>
+      <option value="critical">خطورة &lt;33%</option>
+      <option value="poor">ضعيف 33-50%</option>
+      <option value="avg">متوسط 50-70%</option>
+      <option value="good">جيد 70-85%</option>
+      <option value="elite">نخبة &gt;85%</option>
+    </select>`:''}
+    <select class="fi" id="esort" onchange="filterEnts()">
+      ${c.hasPerf?'<option value="perf_asc">الأسوأ أداءً أولاً</option><option value="perf_desc">الأفضل أداءً أولاً</option>':''}
+      ${c.hasOrders?'<option value="orders">أعلى طلبات</option>':''}
+      ${c.hasDelay?'<option value="delay">أعلى تأخير</option>':''}
+      ${c.hasBad?'<option value="bad">أكثر أياماً سيئة</option>':''}
+    </select>
+  </div>
+  <div class="panel"><div class="ph"><span class="pt" id="ect">تحميل...</span></div>
+  <div class="scroll-x"><table class="tbl"><thead><tr>
+    ${cols.map(col=>`<th>${col.l}</th>`).join('')}<th>الحالة</th>
+  </tr></thead><tbody id="etbody"></tbody></table></div></div>`;
+}
+
+window.onECityChange=function(){
+  if(!currAgg)return;
+  const city=(document.getElementById('ecy')||{}).value||'';
+  const stEl=document.getElementById('est');
+  if(stEl){
+    const stores=city?[...new Set(currAgg.raw.filter(r=>r.city===city).map(r=>r.store||''))].sort():[...new Set(currAgg.raw.map(r=>r.store||''))].sort();
+    stEl.innerHTML='<option value="">كل المتاجر</option>'+stores.filter(s=>s).map(s=>`<option>${s}</option>`).join('');
+  }
+  filterEnts();
 };
 
-window.filterCaps=function(){
-  if(!currData)return;
-  const q=(document.getElementById('cap-q')||{}).value||'';
-  const city=(document.getElementById('cap-city')||{}).value||'';
-  const store=(document.getElementById('cap-store')||{}).value||'';
-  const seg=(document.getElementById('cap-seg')||{}).value||'';
-  const sort=(document.getElementById('cap-sort')||{}).value||'perf_asc';
-  let rows=[...currData];
-  if(q)rows=rows.filter(r=>String(r.id).includes(q)||(r.name||'').toLowerCase().includes(q.toLowerCase())||(r.store||'').toLowerCase().includes(q.toLowerCase()));
+window.filterEnts=function(){
+  if(!currAgg)return;
+  const c=currAgg;
+  const q=(document.getElementById('eq')||{}).value||'';
+  const city=(document.getElementById('ecy')||{}).value||'';
+  const store=(document.getElementById('est')||{}).value||'';
+  const seg=(document.getElementById('eseg')||{}).value||'';
+  const sort=(document.getElementById('esort')||{}).value||'';
+  let rows=[...c.raw];
+  if(q)rows=rows.filter(r=>String(r.id||'').includes(q)||(r.name||'').toLowerCase().includes(q.toLowerCase())||(r.store||'').toLowerCase().includes(q.toLowerCase()));
   if(city)rows=rows.filter(r=>r.city===city);
   if(store)rows=rows.filter(r=>r.store===store);
-  if(seg==='critical')rows=rows.filter(r=>r.perf<0.33);
-  else if(seg==='poor')rows=rows.filter(r=>r.perf>=0.33&&r.perf<0.5);
-  else if(seg==='avg')rows=rows.filter(r=>r.perf>=0.5&&r.perf<0.7);
-  else if(seg==='good')rows=rows.filter(r=>r.perf>=0.7&&r.perf<0.85);
-  else if(seg==='elite')rows=rows.filter(r=>r.perf>=0.85);
-  if(sort==='perf_asc')rows.sort((a,b)=>a.perf-b.perf);
-  else if(sort==='perf_desc')rows.sort((a,b)=>b.perf-a.perf);
-  else if(sort==='orders')rows.sort((a,b)=>b.orders-a.orders);
-  else if(sort==='delay')rows.sort((a,b)=>b.delay-a.delay);
-  else if(sort==='bad')rows.sort((a,b)=>b.bad-a.bad);
-  const shown=rows.slice(0,80);
-  const cnt=document.getElementById('cap-count');
-  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} كابتن`;
-  const tbody=document.getElementById('cap-tbody');
+  if(seg==='critical')rows=rows.filter(r=>r.perf!==null&&r.perf<0.33);
+  else if(seg==='poor')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.33&&r.perf<0.5);
+  else if(seg==='avg')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.5&&r.perf<0.7);
+  else if(seg==='good')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.7&&r.perf<0.85);
+  else if(seg==='elite')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.85);
+  if(sort==='perf_asc')rows.sort((a,b)=>(a.perf||0)-(b.perf||0));
+  else if(sort==='perf_desc')rows.sort((a,b)=>(b.perf||0)-(a.perf||0));
+  else if(sort==='orders')rows.sort((a,b)=>(b.orders||0)-(a.orders||0));
+  else if(sort==='delay')rows.sort((a,b)=>(b.delay||0)-(a.delay||0));
+  else if(sort==='bad')rows.sort((a,b)=>(b.bad||0)-(a.bad||0));
+  const shown=rows.slice(0,100);
+  const cnt=document.getElementById('ect');
+  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} سجل`;
+  const tbody=document.getElementById('etbody');
   if(!tbody)return;
+  const cols=[];
+  if(c.has('id'))cols.push('id');if(c.has('name'))cols.push('name');
+  if(c.has('city'))cols.push('city');if(c.has('store'))cols.push('store');
+  // date removedif(c.hasOrders)cols.push('orders');
+  if(c.hasPerf)cols.push('perf');if(c.hasDel)cols.push('del_pct');
+  if(c.hasPickup)cols.push('pickup_pct');if(c.hasDelay)cols.push('delay');
+  if(c.hasBad)cols.push('bad');if(c.hasCancel)cols.push('cancel');
   tbody.innerHTML=shown.map(r=>`<tr>
-    <td style="color:var(--text);font-weight:500">${r.id}</td>
-    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.name||''}">${r.name||'—'}</td>
-    <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
-    <td>${r.orders}</td>
-    <td><span class="pill ${perfPill(r.perf)}">${pct(r.perf)}</span></td>
-    <td>${pct(r.pickup_pct)}</td>
-    <td class="${r.del_pct===0?'red-txt':''}">${pct(r.del_pct)}</td>
-    <td class="${r.delay>20?'red-txt':r.delay>10?'amber-txt':''}">${r.delay>0?r.delay.toFixed(1):'—'}</td>
-    <td class="${r.bad>=5?'red-txt':r.bad>=3?'amber-txt':''}">${r.bad.toFixed(1)}</td>
-    <td>${r.perf<0.33?'<span class="pill red">خطر</span>':r.perf<0.5?'<span class="pill amber">ضعيف</span>':r.perf>=0.85?'<span class="pill green">نخبة</span>':'<span class="pill gray">عادي</span>'}</td>
+    ${cols.map(col=>{
+      const v=r[col];
+      if(col==='perf'||col==='del_pct'||col==='pickup_pct'||col==='cancel')return`<td>${v!==null?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
+      if(col==='delay')return`<td class="${v>20?'r-txt':v>10?'a-txt':''}">${v!==null?v.toFixed(1)+' دق':'—'}</td>`;
+      if(col==='bad')return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${v!==null?v.toFixed(1):'—'}</td>`;
+      if(col==='name')return`<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
+      return`<td style="color:var(--text)">${v||'—'}</td>`;
+    }).join('')}
+    <td>${r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':r.perf!==null?'<span class="pill x">عادي</span>':'<span class="pill x">—</span>'}</td>
   </tr>`).join('');
+};
+
+function capTable(rows,extraCols){
+  if(!rows||!rows.length)return'<div class="empty" style="padding:16px">لا توجد سجلات</div>';
+  const base=['id','name','city','store','orders'];
+  const cols=[...base,...(extraCols||[])].filter((c,i,a)=>a.indexOf(c)===i);
+  const labels={id:'المعرّف',name:'الاسم',city:'المدينة',store:'المتجر',orders:'طلبات',
+    perf:'الأداء',pickup_pct:'استلام',del_pct:'توصيل',delay:'تأخير',bad:'أيام سيئة',handling:'وقت العميل',max_delay:'أقصى تأخير'};
+  return`<div class="scroll-x" style="max-height:260px;overflow-y:auto"><table class="tbl"><thead><tr>
+    ${cols.map(c=>`<th>${labels[c]||c}</th>`).join('')}<th>الحالة</th>
+  </tr></thead><tbody>
+  ${rows.slice(0,50).map(r=>`<tr>
+    ${cols.map(col=>{
+      const v=r[col];
+      if(col==='perf'||col==='del_pct'||col==='pickup_pct')return`<td>${v!==null&&v!==undefined?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
+      if(col==='delay'||col==='max_delay')return`<td class="${v>20?'r-txt':v>10?'a-txt':''}">${v!==null&&v!==undefined?v.toFixed(1)+' دق':'—'}</td>`;
+      if(col==='bad')return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${v!==null&&v!==undefined?v.toFixed(1):'—'}</td>`;
+      if(col==='handling')return`<td class="${v<0.5?'r-txt':''}">${v!==null&&v!==undefined?v.toFixed(2)+' دق':'—'}</td>`;
+      if(col==='name')return`<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
+      return`<td style="color:var(--text)">${v!==null&&v!==undefined&&v!==''?v:'—'}</td>`;
+    }).join('')}
+    <td>${r.perf!==null&&r.perf!==undefined?(r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
 }
 
-function loadFile(file,which){
-  parseFile(file,function(data){
+function renderAlerts(c){
+  // Build per-signal captain lists
+  const signals=[];
+
+  const f1=c.raw.filter(r=>r.pickup_pct!==null&&r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).sort((a,b)=>(b.orders||0)-(a.orders||0));
+  const f2=c.raw.filter(r=>r.handling!==null&&r.handling<0.5&&r.orders>=5).sort((a,b)=>(b.orders||0)-(a.orders||0));
+  const fZero=c.raw.filter(r=>r.del_pct===0).sort((a,b)=>(b.orders||0)-(a.orders||0));
+  const fBad=c.raw.filter(r=>r.bad!==null&&r.bad>=5&&r.orders>=3).sort((a,b)=>b.bad-a.bad);
+  const fCrit=c.raw.filter(r=>r.perf!==null&&r.perf<0.1&&r.orders>=3).sort((a,b)=>a.perf-b.perf);
+  const fDelay=c.raw.filter(r=>r.max_delay!==null&&r.max_delay>90).sort((a,b)=>b.max_delay-a.max_delay);
+  const fCancel=c.raw.filter(r=>r.cancel!==null&&r.cancel>0.2).sort((a,b)=>b.cancel-a.cancel);
+
+  if(c.avgPerf!==null&&c.avgPerf<0.5)
+    signals.push({type:'r',code:'PERF-LOW',title:`متوسط الأداء منخفض: ${pct(c.avgPerf)}`,desc:'الهدف فوق 70%.',rows:c.raw.filter(r=>r.perf!==null&&r.perf<0.5).sort((a,b)=>a.perf-b.perf),cols:['perf','del_pct','orders']});
+  if(c.avgDel!==null&&c.avgDel<0.5)
+    signals.push({type:'r',code:'DEL-LOW',title:`نسبة التوصيل: ${pct(c.avgDel)}`,desc:'أقل من النصف — مشكلة هيكلية في آخر ميل.',rows:[],cols:[]});
+  if(f1.length)
+    signals.push({type:'r',code:'FRAUD-1',title:`${f1.length} كابتن: استلام عالي + صفر توصيل`,desc:'احتمال تلاعب ممنهج — مراجعة فورية.',rows:f1,cols:['perf','pickup_pct','del_pct','orders','bad']});
+  if(f2.length)
+    signals.push({type:'a',code:'FRAUD-2',title:`${f2.length} كابتن: وقت تعامل مع العميل أقل من 30 ثانية`,desc:'توصيل وهمي محتمل.',rows:f2,cols:['perf','del_pct','handling','orders']});
+  if(fZero.length)
+    signals.push({type:'a',code:'ZERO-DEL',title:`${fZero.length} كابتن بصفر توصيل ناجح`,desc:`يشمل ${fZero.reduce((s,r)=>s+(r.orders||0),0)} طلب ضائع.`,rows:fZero,cols:['perf','pickup_pct','del_pct','orders']});
+  if(fBad.length)
+    signals.push({type:'a',code:'BAD-DAYS',title:`${fBad.length} كابتن بـ 5+ أيام سيئة`,desc:'أداء سيئ متكرر — تدريب أو إجراء تأديبي.',rows:fBad,cols:['perf','bad','orders','delay']});
+  if(fCrit.length)
+    signals.push({type:'r',code:'CRIT-ZERO',title:`${fCrit.length} كابتن بأداء أقل من 10%`,desc:'غياب تشغيلي كامل — تجميد فوري.',rows:fCrit,cols:['perf','pickup_pct','del_pct','orders','bad']});
+  if(fDelay.length)
+    signals.push({type:'a',code:'MAX-DELAY',title:`أقصى تأخير: ${c.maxDelay.toFixed(0)} دقيقة`,desc:'راجع GPS تلك الرحلة.',rows:fDelay,cols:['delay','max_delay','perf','orders']});
+  if(fCancel.length)
+    signals.push({type:'a',code:'HIGH-CANCEL',title:`${fCancel.length} كابتن بمعدل إلغاء فوق 20%`,desc:'يؤثر على رضا العميل.',rows:fCancel,cols:['cancel','perf','orders']});
+
+  if(!signals.length)
+    signals.push({type:'b',code:'OK',title:'لا تنبيهات حرجة',desc:'المؤشرات ضمن الحدود المقبولة.',rows:[],cols:[]});
+
+  const panelsHtml=signals.map(sig=>`
+    <div class="panel" style="margin-bottom:12px">
+      <div class="ph">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="alert-badge ${sig.type}">${sig.code}</span>
+          <div><div class="alert-title">${sig.title}</div><div class="alert-desc">${sig.desc}</div></div>
+        </div>
+        ${sig.rows.length?`<span class="info-chip">${sig.rows.length} سجل</span>`:''}
+      </div>
+      ${sig.rows.length?capTable(sig.rows,sig.cols):''}
+    </div>`).join('');
+
+  return panelsHtml+
+    (c.suggestions.length?`<div class="panel"><div class="ph"><span class="pt">💡 اقتراحات التحسين التشغيلية</span></div>
+    <div class="alerts">${c.suggestions.map((s,i)=>`<div class="alert-row"><span class="alert-badge b">#${i+1}</span><div><div class="alert-desc">${s}</div></div></div>`).join('')}</div></div>`:'');
+}
+
+function renderCompare(c,p){
+  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div>ارفع ملف الفترة السابقة لتفعيل المقارنة</div></div>`;
+  const pm={};p.cities.forEach(ci=>pm[ci.city]=ci);
+  const movers=c.cities.map(ci=>{const prev=pm[ci.city];return{...ci,dp:prev&&ci.perf!==null&&prev.perf!==null?ci.perf-prev.perf:null};}).filter(x=>x.dp!==null).sort((a,b)=>b.dp-a.dp);
+  const kpis=[];
+  if(c.hasPerf&&c.avgPerf!==null&&p.avgPerf!==null)kpis.push({l:'الأداء',cv:pct(c.avgPerf),pv:pct(p.avgPerf),d:c.avgPerf-p.avgPerf,better:'up'});
+  if(c.hasDel&&c.avgDel!==null&&p.avgDel!==null)kpis.push({l:'التوصيل',cv:pct(c.avgDel),pv:pct(p.avgDel),d:c.avgDel-p.avgDel,better:'up'});
+  if(c.hasDelay&&c.avgDelay!==null&&p.avgDelay!==null)kpis.push({l:'التأخير',cv:c.avgDelay.toFixed(1)+' دق',pv:p.avgDelay.toFixed(1)+' دق',d:c.avgDelay-p.avgDelay,better:'dn'});
+  if(c.hasPerf)kpis.push({l:'الإلغاء / zeroDel',cv:c.zeroDel,pv:p.zeroDel,d:c.zeroDel-p.zeroDel,better:'dn'});
+  let out=`<div class="kpi-grid">${kpis.map(k=>{const good=k.better==='up'?k.d>0:k.d<0;return`<div class="kpi ${good?'g':'r'}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.cv}</div><div class="kpi-sub ${good?'up':'dn'}">${k.d>0?'▲':'▼'} (كان ${k.pv})</div></div>`;}).join('')}</div>`;
+  out+=`<div class="two" style="margin-top:12px">
+    <div class="panel"><div class="ph"><span class="pt">🚀 أكثر المدن تحسناً</span></div><div class="pb">${movers.slice(0,7).map(ci=>`<div class="br"><span class="br-l">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--green)"></div></div><span class="br-v g-txt">${pct(ci.perf)}</span><span class="br-d g-txt">▲${pct(ci.dp)}</span></div>`).join('')}</div></div>
+    <div class="panel"><div class="ph"><span class="pt">📉 أكثر المدن تدهوراً</span></div><div class="pb">${[...movers].sort((a,b)=>a.dp-b.dp).slice(0,7).map(ci=>`<div class="br"><span class="br-l">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--red)"></div></div><span class="br-v r-txt">${pct(ci.perf)}</span><span class="br-d r-txt">▼${pct(Math.abs(ci.dp))}</span></div>`).join('')}</div></div>
+  </div>`;
+  return out;
+}
+
+// ══════════════════════════════════════════════
+//  WELCOME SCREEN
+// ══════════════════════════════════════════════
+function renderWelcome(){
+  document.getElementById('main').innerHTML=`
+  <label class="drop-zone" id="dz">
+    <input type="file" id="dz-file" accept=".xlsx,.xls,.csv">
+    <div class="drop-icon">📂</div>
+    <h2>Universal Data Analyzer</h2>
+    <p>اسحب وأفلت أي ملف Excel أو CSV هنا.<br>النظام يكتشف الأعمدة تلقائياً ويبني الداشبورد فوراً<br>بدون الحاجة لتعديل أسماء الأعمدة.</p>
+    <div style="font-size:11px;color:var(--text3)">يدعم: أداء الكباتن ، أداء المتاجر ، بيانات التوصيل ، أي شيت تشغيلي</div>
+    <div class="btn-upload">📊 اختر ملفاً</div>
+  </label>`;
+  document.getElementById('dz-file').onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0],'curr');};
+  const dz=document.getElementById('dz');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFile(f,'curr');});
+}
+
+function handleFile(file,which){
+  parseFile(file,info=>{
+    window._pendingFile={fileInfo:info,which};
     if(which==='curr'){
-      currData=data;
-      const lbl=document.getElementById('curr-label');
-      document.getElementById('curr-text').textContent=file.name.substring(0,22);
-      document.getElementById('curr-icon').textContent='✅';
-      if(lbl)lbl.classList.add('loaded');
+      // auto-detect and go straight to mapping UI
+      renderMapUI(info,'curr');
     } else {
-      prevData=data;
-      const lbl=document.getElementById('prev-label');
-      document.getElementById('prev-text').textContent=file.name.substring(0,22);
-      document.getElementById('prev-icon').textContent='✅';
-      if(lbl)lbl.classList.add('loaded');
+      renderMapUI(info,'prev');
     }
-    render();
   });
 }
 
-document.getElementById('curr-file').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'curr')};
-document.getElementById('prev-file').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'prev')};
+// ══════════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════════
+document.getElementById('f-curr').onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0],'curr');};
+document.getElementById('f-prev').onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0],'prev');};
+window.sw=function(t){activeTab=t;renderDash();};
 
-// ── Theme toggle ──────────────────────────────────────────
-let isDark=true;
+// ══════════════════════════════════════════════
+//  THEME
+// ══════════════════════════════════════════════
 window.toggleTheme=function(){
   isDark=!isDark;
-  const root=document.documentElement;
-  root.setAttribute('data-theme',isDark?'dark':'light');
-  document.getElementById('t-day').className=isDark?'':'active';
-  document.getElementById('t-night').className=isDark?'active':'';
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  document.getElementById('td').className=isDark?'':'on';
+  document.getElementById('tn').className=isDark?'on':'';
   localStorage.setItem('ops-theme',isDark?'dark':'light');
 };
-(function initTheme(){
-  const saved=localStorage.getItem('ops-theme');
-  if(saved==='light'){isDark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('t-day').className='active';document.getElementById('t-night').className='';}
-  else{document.documentElement.setAttribute('data-theme','dark');}
+(function(){
+  const s=localStorage.getItem('ops-theme');
+  if(s==='light'){isDark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('td').className='on';document.getElementById('tn').className='';}
+  else document.documentElement.setAttribute('data-theme','dark');
 })();
 
-render();
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+renderWelcome();
 </script>
 </body>
 </html>
