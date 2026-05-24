@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPS.INTEL — Daily Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font-head:'Syne',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+  --green:#00c47a;--green2:#008f58;--green-bg:#00c47a12;
+  --red:#e8334a;--red2:#b8273b;--red-bg:#e8334a12;
+  --amber:#d4891a;--amber2:#a86c12;--amber-bg:#d4891a12;
+  --blue:#2b7fd4;--blue2:#1a63aa;--blue-bg:#2b7fd412;
+}
+:root,[data-theme="dark"]{
+  --bg:#0a0c0f;--bg2:#111418;--bg3:#181c22;--bg4:#1e242c;
+  --border:#ffffff0f;--border2:#ffffff18;
+  --text:#e8eaf0;--text2:#8b90a0;--text3:#555b6a;
+  --shadow:0 2px 12px rgba(0,0,0,.4);
+}
+[data-theme="light"]{
+  --bg:#f0f2f5;--bg2:#ffffff;--bg3:#f5f7fa;--bg4:#eaedf2;
+  --border:#00000010;--border2:#00000018;
+  --text:#1a1d24;--text2:#5a6070;--text3:#9aa0b0;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --green:#008f58;--green2:#006e42;--green-bg:#008f5812;
+  --red:#c4293d;--red2:#9e2030;--red-bg:#c4293d12;
+  --amber:#b5730f;--amber2:#8f5a0a;--amber-bg:#b5730f12;
+  --blue:#1a63aa;--blue2:#134e88;--blue-bg:#1a63aa12;
+}
+.theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:4px;display:flex;align-items:center;gap:2px;cursor:pointer;transition:all .2s}
+.theme-toggle span{padding:4px 10px;border-radius:14px;font-size:11px;font-family:var(--font-head);font-weight:600;transition:all .2s;color:var(--text3);user-select:none}
+.theme-toggle span.active{background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:13px;min-height:100vh;transition:background .25s,color .25s}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--text)}
+.logo span{color:var(--green)}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
+.status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-label{font-size:11px;color:var(--text2)}
+.upload-btn{border:1.5px dashed var(--border2);border-radius:7px;padding:7px 14px;cursor:pointer;background:var(--bg3);display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);font-family:var(--font-mono);transition:all .2s;white-space:nowrap}
+.upload-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.upload-btn.prev:hover,.upload-btn.prev.loaded{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.upload-btn.loaded{border-color:var(--green2);color:var(--green);background:var(--green-bg)}
+.upload-btn input{display:none}
+.main{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.welcome{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:48px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.welcome h1{font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--text)}
+.welcome p{color:var(--text2);font-size:12px;max-width:440px;line-height:1.9}
+.welcome-btns{display:flex;gap:14px}
+.welcome-btns label{border:1.5px dashed var(--border2);border-radius:10px;padding:24px 32px;cursor:pointer;background:var(--bg3);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;color:var(--text2);transition:all .2s;min-width:160px}
+.welcome-btns label:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.welcome-btns label.prev:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.welcome-btns label input{display:none}
+.tab-bar{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:7px 16px;border-radius:5px;font-size:11px;font-family:var(--font-head);font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:transparent;letter-spacing:.04em}
+.tab.active{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
+.tab:hover:not(.active){color:var(--text);background:var(--bg3)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+.kpi:hover{border-color:var(--border2)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.green::before{background:var(--green)}
+.kpi.red::before{background:var(--red)}
+.kpi.amber::before{background:var(--amber)}
+.kpi.blue::before{background:var(--blue)}
+.kpi-label{font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.04em}
+.kpi-value{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.kpi-delta{font-size:11px;margin-top:5px}
+.kpi-delta.up{color:var(--green)}
+.kpi-delta.dn{color:var(--red)}
+.kpi-delta.neu{color:var(--text3)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:0}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel-title{font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--text);letter-spacing:.05em}
+.panel-body{padding:14px 16px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11px}
+.br-label{width:72px;color:var(--text2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br-track{flex:1;background:var(--bg4);border-radius:3px;height:6px;overflow:hidden}
+.br-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.br-val{width:44px;text-align:left;flex-shrink:0;font-weight:500;color:var(--text);font-size:11px}
+.br-delta{width:42px;text-align:left;flex-shrink:0;font-size:10px}
+.seg-bar{display:flex;height:18px;border-radius:4px;overflow:hidden;gap:1px;margin:8px 0}
+.seg-piece{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;overflow:hidden;transition:flex .5s;font-family:var(--font-head)}
+.seg-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.seg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
+.seg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{padding:8px 10px;text-align:right;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;font-family:var(--font-head);font-size:10px;letter-spacing:.04em;white-space:nowrap}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--bg3);color:var(--text)}
+.pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;font-family:var(--font-head)}
+.pill.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,106,.2)}
+.pill.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
+.pill.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(0,229,160,.2)}
+.pill.blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(77,159,255,.2)}
+.pill.gray{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.compare-badge{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(77,159,255,.25);font-family:var(--font-head);font-weight:600}
+.signal-list{display:flex;flex-direction:column}
+.signal{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;transition:background .15s}
+.signal:last-child{border-bottom:none}
+.signal:hover{background:var(--bg3)}
+.sig-badge{font-size:10px;padding:3px 8px;border-radius:3px;font-weight:600;font-family:var(--font-head);white-space:nowrap;flex-shrink:0;margin-top:1px}
+.sig-badge.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,77,106,.2)}
+.sig-badge.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
+.sig-title{font-weight:500;color:var(--text);margin-bottom:3px;font-size:12px}
+.sig-desc{color:var(--text2);font-size:11px;line-height:1.6}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filter-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 12px;border-radius:6px;font-size:11px;font-family:var(--font-mono);flex:1;min-width:200px}
+.filter-input:focus{outline:none;border-color:var(--green)}
+.filter-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:11px;font-family:var(--font-mono);cursor:pointer}
+.filter-select:focus{outline:none;border-color:var(--green)}
+.scroll-x{overflow-x:auto}
+.empty-state{text-align:center;padding:48px;color:var(--text3);font-size:12px;line-height:2}
+.green-txt{color:var(--green)}
+.red-txt{color:var(--red)}
+.amber-txt{color:var(--amber)}
+.blue-txt{color:var(--blue)}
+.no-comp{font-size:10px;color:var(--text3);font-style:italic}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}.topbar-right{gap:6px}.welcome-btns{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">OPS<span>.</span>INTEL</div>
+  <div class="topbar-right">
+    <div class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+      <span id="t-day">☀️ نهاري</span>
+      <span id="t-night" class="active">🌙 ليلي</span>
+    </div>
+    <label class="upload-btn" id="curr-label">
+      <input type="file" id="curr-file" accept=".xlsx,.xls,.csv">
+      <span id="curr-icon">📊</span>
+      <span id="curr-text">الفترة الحالية</span>
+    </label>
+    <label class="upload-btn prev" id="prev-label">
+      <input type="file" id="prev-file" accept=".xlsx,.xls,.csv">
+      <span id="prev-icon">📅</span>
+      <span id="prev-text">الفترة السابقة (مقارنة)</span>
+    </label>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-label" id="status-label">بانتظار البيانات</span>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let currData=null,prevData=null,activeTab='overview';
+
+function parseFile(file,cb){
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{defval:0});
+      const data=raw.map(r=>({
+        id:r['captain_id']||r['Captain ID']||0,
+        city:r['city_code']||r['City']||'',
+        store:r['store_code']||r['Store']||'',
+        name:r['name']||r['Name']||'',
+        orders:+(r['total_orders']||0),
+        pickups:+(r['on_time_pickups']||0),
+        perf:+(r['performnce']||r['performance']||0),
+        pickup_pct:+(r['pickup_success_pct']||0),
+        del_n:+(r['on_time_deliveries']||0),
+        del_pct:+(r['delivery_success_rate_pct']||0),
+        delay:+(r['avg_delay_min']||0),
+        max_delay:+(r['max_delay_min']||0),
+        handling:+(r['avg_customer_handling_min']||0),
+        handling_pct:+(r['customer_handling_success_pct']||0),
+        bad:+(r['bad_days']||0),
+      })).filter(r=>r.orders>0||r.id);
+      cb(data);
+    }catch(ex){alert('خطأ في قراءة الملف:\n'+ex.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function agg(data){
+  if(!data||!data.length)return null;
+  const n=data.length;
+  const totOrders=data.reduce((s,r)=>s+r.orders,0);
+  const avgPerf=data.reduce((s,r)=>s+r.perf,0)/n;
+  const avgPickup=data.reduce((s,r)=>s+r.pickup_pct,0)/n;
+  const avgDel=data.reduce((s,r)=>s+r.del_pct,0)/n;
+  const delayRows=data.filter(r=>r.delay>0);
+  const avgDelay=delayRows.length?delayRows.reduce((s,r)=>s+r.delay,0)/delayRows.length:0;
+  const avgBad=data.reduce((s,r)=>s+r.bad,0)/n;
+  const zeroDel=data.filter(r=>r.del_pct===0).length;
+  const zeroDelOrders=data.filter(r=>r.del_pct===0).reduce((s,r)=>s+r.orders,0);
+  const critical=data.filter(r=>r.perf<0.1).length;
+  const elite=data.filter(r=>r.perf>0.85&&r.orders>=20).length;
+  const highBad=data.filter(r=>r.bad>=5).length;
+  const fraud1=data.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).length;
+  const fraud2=data.filter(r=>r.handling<0.5&&r.orders>=5).length;
+  const maxDelay=data.reduce((m,r)=>Math.max(m,r.max_delay),0);
+  const uniqueCap=new Set(data.map(r=>r.id)).size;
+  const uniqueCity=new Set(data.map(r=>r.city)).size;
+  const uniqueStore=new Set(data.map(r=>r.store)).size;
+  const segs={
+    critical:data.filter(r=>r.perf<0.33).length,
+    poor:data.filter(r=>r.perf>=0.33&&r.perf<0.5).length,
+    avg:data.filter(r=>r.perf>=0.5&&r.perf<0.7).length,
+    good:data.filter(r=>r.perf>=0.7&&r.perf<0.85).length,
+    elite:data.filter(r=>r.perf>=0.85).length,
+  };
+  const cityMap={};
+  data.forEach(r=>{
+    if(!cityMap[r.city])cityMap[r.city]={city:r.city,n:0,orders:0,perf:0,del:0,delay:0,dc:0,bad:0};
+    const c=cityMap[r.city];c.n++;c.orders+=r.orders;c.perf+=r.perf;c.del+=r.del_pct;c.bad+=r.bad;
+    if(r.delay>0){c.delay+=r.delay;c.dc++;}
+  });
+  const cities=Object.values(cityMap).map(c=>({
+    city:c.city,n:c.n,orders:c.orders,
+    perf:+(c.perf/c.n).toFixed(4),del:+(c.del/c.n).toFixed(4),
+    delay:c.dc?+(c.delay/c.dc).toFixed(2):0,bad:+(c.bad/c.n).toFixed(2)
+  })).sort((a,b)=>b.perf-a.perf);
+  const storeMap={};
+  data.forEach(r=>{
+    if(!storeMap[r.store])storeMap[r.store]={store:r.store,n:0,orders:0,perf:0,del:0,delay:0,dc:0,bad:0};
+    const s=storeMap[r.store];s.n++;s.orders+=r.orders;s.perf+=r.perf;s.del+=r.del_pct;s.bad+=r.bad;
+    if(r.delay>0){s.delay+=r.delay;s.dc++;}
+  });
+  const stores=Object.values(storeMap).filter(s=>s.n>=5).map(s=>({
+    store:s.store,n:s.n,orders:s.orders,
+    perf:+(s.perf/s.n).toFixed(4),del:+(s.del/s.n).toFixed(4),
+    delay:s.dc?+(s.delay/s.dc).toFixed(2):0,bad:+(s.bad/s.n).toFixed(2)
+  })).sort((a,b)=>a.perf-b.perf);
+  return{n,totOrders,avgPerf,avgPickup,avgDel,avgDelay,avgBad,zeroDel,zeroDelOrders,
+    critical,elite,highBad,fraud1,fraud2,maxDelay,uniqueCap,uniqueCity,uniqueStore,segs,cities,stores,raw:data};
+}
+
+function pct(v){return(v*100).toFixed(1)+'%'}
+function fmtN(v){return v>=1000?(v/1000).toFixed(1)+'K':v}
+function perfColor(v){if(v>=0.85)return'var(--green)';if(v>=0.7)return'var(--blue)';if(v>=0.5)return'var(--amber)';return'var(--red)';}
+function perfPill(v){if(v>=0.85)return'green';if(v>=0.7)return'blue';if(v>=0.5)return'amber';return'red';}
+
+function deltaHtml(curr,prev,better){
+  if(prev===null||prev===undefined)return'';
+  const d=curr-prev;
+  if(Math.abs(d)<0.0001)return'<span class="kpi-delta neu">— بلا تغيير</span>';
+  const up=d>0;
+  const good=better==='up'?up:!up;
+  const cls=good?'up':'dn';
+  const arrow=up?'▲':'▼';
+  const val=typeof curr==='number'&&curr<2?(d*100).toFixed(1)+'pp':(Math.abs(d/prev)*100).toFixed(1)+'%';
+  return`<span class="kpi-delta ${cls}">${arrow} ${val}</span>`;
+}
+
+function render(){
+  const c=agg(currData);
+  const p=prevData?agg(prevData):null;
+  if(!c){
+    document.getElementById('main').innerHTML=`
+    <div class="welcome">
+      <div style="font-size:48px">⚡</div>
+      <h1>OPS<span style="color:var(--green)">.</span>INTEL Dashboard</h1>
+      <p>ارفع ملف البيانات الحالي للبدء. ارفع ملف الفترة السابقة لتفعيل نظام المقارنة التفصيلي.</p>
+      <div class="welcome-btns">
+        <label><input type="file" id="w-curr" accept=".xlsx,.xls,.csv"><span style="font-size:28px">📊</span><span style="font-weight:600;color:var(--text)">الفترة الحالية</span><span>xlsx / csv</span></label>
+        <label class="prev"><input type="file" id="w-prev" accept=".xlsx,.xls,.csv"><span style="font-size:28px">📅</span><span style="font-weight:600;color:var(--text)">الفترة السابقة</span><span>اختياري للمقارنة</span></label>
+      </div>
+    </div>`;
+    document.getElementById('w-curr').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'curr')};
+    document.getElementById('w-prev').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'prev')};
+    return;
+  }
+
+  document.getElementById('status-dot').className='status-dot live';
+  document.getElementById('status-label').textContent=c.uniqueCap+' كابتن | '+c.uniqueCity+' مدينة | '+c.uniqueStore+' متجر';
+
+  const tabs=[
+    {k:'overview',lbl:'لمحة عامة'},
+    {k:'cities',lbl:'المدن'},
+    {k:'stores',lbl:'المتاجر'},
+    {k:'captains',lbl:'الكباتن'},
+    {k:'fraud',lbl:'🚨 الاحتيال'},
+    {k:'compare',lbl:'المقارنة'+(p?' <span class="compare-badge">مفعّل</span>':'')}
+  ];
+
+  const tabBar=`<div class="tab-bar">${tabs.map(t=>`<button class="tab${t.k===activeTab?' active':''}" onclick="switchTab('${t.k}')">${t.lbl}</button>`).join('')}</div>`;
+
+  let body='';
+
+  if(activeTab==='overview'){
+    body=`
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">إجمالي الطلبات</div><div class="kpi-value">${fmtN(c.totOrders)}</div>${deltaHtml(c.totOrders,p?p.totOrders:null,'up')}</div>
+      <div class="kpi ${c.avgPerf>=0.7?'green':c.avgPerf>=0.5?'amber':'red'}"><div class="kpi-label">متوسط الأداء</div><div class="kpi-value">${pct(c.avgPerf)}</div>${deltaHtml(c.avgPerf,p?p.avgPerf:null,'up')}</div>
+      <div class="kpi ${c.avgDel>=0.7?'green':c.avgDel>=0.5?'amber':'red'}"><div class="kpi-label">التوصيل الناجح</div><div class="kpi-value">${pct(c.avgDel)}</div>${deltaHtml(c.avgDel,p?p.avgDel:null,'up')}</div>
+      <div class="kpi ${c.avgPickup>=0.7?'green':c.avgPickup>=0.5?'amber':'red'}"><div class="kpi-label">الاستلام الناجح</div><div class="kpi-value">${pct(c.avgPickup)}</div>${deltaHtml(c.avgPickup,p?p.avgPickup:null,'up')}</div>
+      <div class="kpi ${c.avgDelay<=5?'green':c.avgDelay<=10?'amber':'red'}"><div class="kpi-label">متوسط التأخير</div><div class="kpi-value">${c.avgDelay.toFixed(1)}<span style="font-size:12px;font-weight:400"> دق</span></div>${deltaHtml(c.avgDelay,p?p.avgDelay:null,'dn')}</div>
+      <div class="kpi ${c.avgBad<=1?'green':c.avgBad<=2?'amber':'red'}"><div class="kpi-label">الأيام السيئة</div><div class="kpi-value">${c.avgBad.toFixed(2)}</div>${deltaHtml(c.avgBad,p?p.avgBad:null,'dn')}</div>
+      <div class="kpi red"><div class="kpi-label">صفر توصيل</div><div class="kpi-value">${c.zeroDel}</div>${deltaHtml(c.zeroDel,p?p.zeroDel:null,'dn')}<div class="kpi-delta neu">${fmtN(c.zeroDelOrders)} طلب ضائع</div></div>
+      <div class="kpi ${c.elite>=100?'green':'amber'}"><div class="kpi-label">كباتن النخبة</div><div class="kpi-value">${c.elite}</div>${deltaHtml(c.elite,p?p.elite:null,'up')}</div>
+      <div class="kpi red"><div class="kpi-label">أداء &lt;10% (خطر)</div><div class="kpi-value">${c.critical}</div>${deltaHtml(c.critical,p?p.critical:null,'dn')}</div>
+      <div class="kpi amber"><div class="kpi-label">5+ أيام سيئة</div><div class="kpi-value">${c.highBad}</div>${deltaHtml(c.highBad,p?p.highBad:null,'dn')}</div>
+      <div class="kpi red"><div class="kpi-label">إشارة احتيال #1</div><div class="kpi-value">${c.fraud1}</div>${deltaHtml(c.fraud1,p?p.fraud1:null,'dn')}</div>
+      <div class="kpi amber"><div class="kpi-label">إشارة احتيال #2</div><div class="kpi-value">${c.fraud2}</div>${deltaHtml(c.fraud2,p?p.fraud2:null,'dn')}</div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div class="panel-head"><span class="panel-title">توزيع شرائح الأداء</span><span style="font-size:11px;color:var(--text3)">${c.n} سجل</span></div>
+      <div class="panel-body">
+        <div class="seg-bar">
+          ${[{k:'critical',c:'#ff4d6a'},{k:'poor',c:'#f5a623'},{k:'avg',c:'#555b6a'},{k:'good',c:'#4d9fff'},{k:'elite',c:'#00e5a0'}].map(s=>{
+            const w=(c.segs[s.k]/c.n*100).toFixed(1);
+            return`<div class="seg-piece" style="flex:${w};background:${s.c}22;border:1px solid ${s.c}44;color:${s.c}">${w>4?c.segs[s.k]:''}</div>`;
+          }).join('')}
+        </div>
+        <div class="seg-legend">
+          ${[{k:'critical',c:'#ff4d6a',l:'بالغ الخطورة &lt;33%'},{k:'poor',c:'#f5a623',l:'ضعيف 33-50%'},{k:'avg',c:'#555b6a',l:'متوسط 50-70%'},{k:'good',c:'#4d9fff',l:'جيد 70-85%'},{k:'elite',c:'#00e5a0',l:'نخبة &gt;85%'}].map(s=>`<div class="seg-item"><div class="seg-dot" style="background:${s.c}"></div>${s.l}: <strong style="color:var(--text)">${c.segs[s.k]}</strong></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="two-col" style="margin-top:12px">
+      <div class="panel"><div class="panel-head"><span class="panel-title">🏆 أفضل 6 مدن</span></div><div class="panel-body">
+        ${c.cities.slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
+      </div></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">🔴 أسوأ 6 مدن</span></div><div class="panel-body">
+        ${[...c.cities].sort((a,b)=>a.perf-b.perf).slice(0,6).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:${perfColor(ci.perf)}"></div></div><span class="br-val">${pct(ci.perf)}</span></div>`).join('')}
+      </div></div>
+    </div>`;
+  }
+
+  else if(activeTab==='cities'){
+    const pm={};if(p)p.cities.forEach(ci=>pm[ci.city]=ci);
+    body=`<div class="panel"><div class="panel-head"><span class="panel-title">أداء جميع المدن (${c.uniqueCity})</span>${p?'<span class="compare-badge">مقارنة مفعّلة</span>':''}</div>
+    <div class="scroll-x"><table class="data-table"><thead><tr>
+      <th>المدينة</th><th>كباتن</th><th>طلبات</th><th>الأداء</th>${p?'<th>Δ أداء</th>':''}<th>التوصيل</th>${p?'<th>Δ توصيل</th>':''}<th>التأخير</th><th>أيام سيئة</th><th>الحالة</th>
+    </tr></thead><tbody>
+    ${c.cities.map(ci=>{
+      const prev=pm[ci.city];
+      const dp=prev?ci.perf-prev.perf:null;
+      const dd=prev?ci.del-prev.del:null;
+      return`<tr>
+        <td style="font-weight:600;color:var(--text)">${ci.city}</td>
+        <td>${ci.n}</td><td>${ci.orders}</td>
+        <td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td>
+        ${p?`<td class="${dp===null?'no-comp':dp>0?'green-txt':'red-txt'}">${dp===null?'—':(dp>0?'▲ ':'▼ ')+pct(Math.abs(dp))}</td>`:''}
+        <td>${pct(ci.del)}</td>
+        ${p?`<td class="${dd===null?'no-comp':dd>0?'green-txt':'red-txt'}">${dd===null?'—':(dd>0?'▲ ':'▼ ')+pct(Math.abs(dd))}</td>`:''}
+        <td class="${ci.delay>10?'red-txt':ci.delay>5?'amber-txt':''}">${ci.delay} دق</td>
+        <td class="${ci.bad>3?'red-txt':ci.bad>2?'amber-txt':''}">${ci.bad}</td>
+        <td>${ci.perf>=0.7?'<span class="pill green">جيد</span>':ci.perf>=0.5?'<span class="pill amber">متوسط</span>':'<span class="pill red">تدخل</span>'}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div></div>`;
+  }
+
+  else if(activeTab==='stores'){
+    const pm={};if(p)p.stores.forEach(s=>pm[s.store]=s);
+    body=`<div class="panel"><div class="panel-head"><span class="panel-title">أسوأ 25 متجراً (أولوية التدخل)</span>${p?'<span class="compare-badge">مقارنة مفعّلة</span>':''}</div>
+    <div class="scroll-x"><table class="data-table"><thead><tr>
+      <th>المتجر</th><th>كباتن</th><th>طلبات</th><th>الأداء</th>${p?'<th>Δ أداء</th>':''}<th>التوصيل</th><th>التأخير</th><th>أيام سيئة</th><th>الأولوية</th>
+    </tr></thead><tbody>
+    ${c.stores.slice(0,25).map(s=>{
+      const prev=pm[s.store];
+      const dp=prev?s.perf-prev.perf:null;
+      return`<tr>
+        <td style="font-weight:600;color:var(--text);font-size:10px">${s.store}</td>
+        <td>${s.n}</td><td>${s.orders}</td>
+        <td><span class="pill ${perfPill(s.perf)}">${pct(s.perf)}</span></td>
+        ${p?`<td class="${dp===null?'no-comp':dp>0?'green-txt':'red-txt'}">${dp===null?'جديد':(dp>0?'▲ ':'▼ ')+pct(Math.abs(dp))}</td>`:''}
+        <td>${pct(s.del)}</td>
+        <td class="${s.delay>10?'red-txt':s.delay>5?'amber-txt':''}">${s.delay} دق</td>
+        <td class="${s.bad>3?'red-txt':s.bad>2?'amber-txt':''}">${s.bad}</td>
+        <td>${s.perf<0.45?'<span class="pill red">🔴 عاجل</span>':s.perf<0.55?'<span class="pill amber">🟡 مراقبة</span>':'<span class="pill blue">🔵 متابعة</span>'}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div></div>`;
+  }
+
+  else if(activeTab==='captains'){
+    const allCities=[...new Set(c.raw.map(r=>r.city))].sort();
+    const allStores=[...new Set(c.raw.map(r=>r.store))].sort();
+    body=`
+    <div class="filter-row">
+      <input class="filter-input" id="cap-q" placeholder="🔍 ابحث بالاسم أو الـ ID أو المتجر..." oninput="filterCaps()" style="min-width:240px">
+      <select class="filter-select" id="cap-city" onchange="onCityChange()">
+        <option value="">كل المدن</option>
+        ${allCities.map(ci=>`<option>${ci}</option>`).join('')}
+      </select>
+      <select class="filter-select" id="cap-store" onchange="filterCaps()">
+        <option value="">كل المتاجر</option>
+        ${allStores.map(s=>`<option>${s}</option>`).join('')}
+      </select>
+      <select class="filter-select" id="cap-seg" onchange="filterCaps()">
+        <option value="">كل الشرائح</option>
+        <option value="critical">بالغ الخطورة (&lt;33%)</option>
+        <option value="poor">ضعيف (33-50%)</option>
+        <option value="avg">متوسط (50-70%)</option>
+        <option value="good">جيد (70-85%)</option>
+        <option value="elite">نخبة (&gt;85%)</option>
+      </select>
+      <select class="filter-select" id="cap-sort" onchange="filterCaps()">
+        <option value="perf_asc">الأسوأ أداءً أولاً</option>
+        <option value="perf_desc">الأفضل أداءً أولاً</option>
+        <option value="orders">أعلى طلبات</option>
+        <option value="delay">أعلى تأخير</option>
+        <option value="bad">أكثر أياماً سيئة</option>
+      </select>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title" id="cap-count">تحميل...</span></div>
+      <div class="scroll-x"><table class="data-table"><thead><tr>
+        <th>ID</th><th>الاسم</th><th>المدينة</th><th>المتجر</th>
+        <th>طلبات</th><th>الأداء</th><th>الاستلام</th><th>التوصيل</th><th>التأخير</th><th>أيام سيئة</th><th>الحالة</th>
+      </tr></thead><tbody id="cap-tbody"></tbody></table></div>
+    </div>`;
+  }
+
+  else if(activeTab==='fraud'){
+    const f1=c.raw.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5).sort((a,b)=>b.orders-a.orders);
+    const f2=c.raw.filter(r=>r.handling<0.5&&r.orders>=5).sort((a,b)=>b.orders-a.orders);
+    const f3=c.raw.filter(r=>r.max_delay>90);
+    const f4=c.raw.filter(r=>r.bad>=5&&r.orders>=5).sort((a,b)=>b.bad-a.bad);
+    const f5=c.raw.filter(r=>r.perf<0.1&&r.orders>=5).sort((a,b)=>a.perf-b.perf);
+    body=`
+    <div class="panel"><div class="panel-head"><span class="panel-title">🚨 لوحة كشف الاحتيال والشذوذات</span></div>
+    <div class="signal-list">
+      <div class="signal"><div class="sig-badge red">FRAUD-1</div><div><div class="sig-title">استلام عالي + صفر توصيل — ${f1.length} كابتن</div><div class="sig-desc">pickup ≥ 80% مع delivery = 0% في 5+ طلبات. المشتبه الأول بالتلاعب.</div></div></div>
+      <div class="signal"><div class="sig-badge red">FRAUD-2</div><div><div class="sig-title">وقت معالجة أقل من 30 ثانية — ${f2.length} كابتن</div><div class="sig-desc">التوصيل الحقيقي لا يقل عن دقيقة. أقل من ذلك = توصيل وهمي محتمل.</div></div></div>
+      <div class="signal"><div class="sig-badge amber">DELAY-1</div><div><div class="sig-title">تأخير أقصى فوق 90 دقيقة — ${f3.length} كباتن</div><div class="sig-desc">يجب مراجعة مسار GPS الكابتن في تلك الفترة تحديداً.</div></div></div>
+      <div class="signal"><div class="sig-badge amber">BAD-DAYS</div><div><div class="sig-title">5+ أيام سيئة متراكمة — ${f4.length} كابتن</div><div class="sig-desc">أداء سيئ ممتد. يحتاج تدخل تدريبي فوري أو إجراء تأديبي.</div></div></div>
+      <div class="signal"><div class="sig-badge red">CRIT-ZERO</div><div><div class="sig-title">أداء أقل من 10% — ${f5.length} كابتن</div><div class="sig-desc">غياب تشغيلي كامل. يجب تجميد الحسابات والتحقيق الفوري.</div></div></div>
+    </div></div>
+    <div class="panel" style="margin-top:12px">
+      <div class="panel-head"><span class="panel-title">قائمة FRAUD-1 المشتبه بهم (أعلى ${Math.min(20,f1.length)} حسب الطلبات)</span></div>
+      <div class="scroll-x"><table class="data-table"><thead><tr><th>ID</th><th>الاسم</th><th>المدينة</th><th>المتجر</th><th>طلبات</th><th>استلام</th><th>توصيل</th><th>تأخير</th><th>أيام سيئة</th></tr></thead><tbody>
+      ${f1.slice(0,20).map(r=>`<tr>
+        <td style="color:var(--red);font-weight:600">${r.id}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name||'—'}</td>
+        <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
+        <td>${r.orders}</td>
+        <td class="green-txt">${pct(r.pickup_pct)}</td>
+        <td class="red-txt">${pct(r.del_pct)}</td>
+        <td class="${r.delay>20?'red-txt':''}">${r.delay>0?r.delay.toFixed(1):'—'}</td>
+        <td class="${r.bad>=5?'red-txt':'amber-txt'}">${r.bad.toFixed(1)}</td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <div class="panel-head"><span class="panel-title">كباتن CRIT-ZERO — أداء أقل من 10%</span></div>
+      <div class="scroll-x"><table class="data-table"><thead><tr><th>ID</th><th>المدينة</th><th>المتجر</th><th>طلبات</th><th>الأداء</th><th>استلام</th><th>توصيل</th><th>أيام سيئة</th></tr></thead><tbody>
+      ${f5.slice(0,15).map(r=>`<tr>
+        <td style="color:var(--red);font-weight:600">${r.id}</td>
+        <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
+        <td>${r.orders}</td>
+        <td><span class="pill red">${pct(r.perf)}</span></td>
+        <td class="${r.pickup_pct===0?'red-txt':''}">${pct(r.pickup_pct)}</td>
+        <td class="red-txt">${pct(r.del_pct)}</td>
+        <td class="${r.bad>=5?'red-txt':'amber-txt'}">${r.bad.toFixed(1)}</td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+  }
+
+  else if(activeTab==='compare'){
+    if(!p){
+      body=`<div class="panel"><div class="empty-state"><div style="font-size:40px;margin-bottom:12px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:8px">لم يتم رفع بيانات الفترة السابقة</div>ارفع ملف الفترة السابقة من شريط الأدوات أعلاه</div></div>`;
+    } else {
+      const pm={};p.cities.forEach(ci=>pm[ci.city]=ci);
+      const movers=c.cities.map(ci=>{const prev=pm[ci.city];return{...ci,dp:prev?ci.perf-prev.perf:null,pp:prev?prev.perf:null};}).filter(ci=>ci.dp!==null).sort((a,b)=>b.dp-a.dp);
+      body=`
+      <div class="kpi-grid">
+        <div class="kpi ${c.avgPerf>p.avgPerf?'green':'red'}"><div class="kpi-label">الأداء العام</div><div class="kpi-value">${pct(c.avgPerf)}</div><div class="kpi-delta ${c.avgPerf>p.avgPerf?'up':'dn'}">${c.avgPerf>p.avgPerf?'▲':'▼'} (كان ${pct(p.avgPerf)})</div></div>
+        <div class="kpi ${c.avgDel>p.avgDel?'green':'red'}"><div class="kpi-label">التوصيل الناجح</div><div class="kpi-value">${pct(c.avgDel)}</div><div class="kpi-delta ${c.avgDel>p.avgDel?'up':'dn'}">${c.avgDel>p.avgDel?'▲':'▼'} (كان ${pct(p.avgDel)})</div></div>
+        <div class="kpi ${c.fraud1<p.fraud1?'green':'red'}"><div class="kpi-label">احتيال FRAUD-1</div><div class="kpi-value">${c.fraud1}</div><div class="kpi-delta ${c.fraud1<p.fraud1?'up':'dn'}">${c.fraud1<p.fraud1?'▼ تحسن':'▲ تدهور'} (كان ${p.fraud1})</div></div>
+        <div class="kpi ${c.zeroDel<p.zeroDel?'green':'red'}"><div class="kpi-label">صفر توصيل</div><div class="kpi-value">${c.zeroDel}</div><div class="kpi-delta ${c.zeroDel<p.zeroDel?'up':'dn'}">${c.zeroDel<p.zeroDel?'▼ انخفض':'▲ ارتفع'} (كان ${p.zeroDel})</div></div>
+        <div class="kpi ${c.elite>p.elite?'green':'amber'}"><div class="kpi-label">كباتن النخبة</div><div class="kpi-value">${c.elite}</div><div class="kpi-delta ${c.elite>p.elite?'up':'dn'}">${c.elite>p.elite?'▲':' ▼'} ${Math.abs(c.elite-p.elite)} (كان ${p.elite})</div></div>
+        <div class="kpi ${c.avgDelay<p.avgDelay?'green':'red'}"><div class="kpi-label">متوسط التأخير</div><div class="kpi-value">${c.avgDelay.toFixed(1)} دق</div><div class="kpi-delta ${c.avgDelay<p.avgDelay?'up':'dn'}">${c.avgDelay<p.avgDelay?'▼ تحسن':'▲ تدهور'} (كان ${p.avgDelay.toFixed(1)})</div></div>
+      </div>
+      <div class="two-col" style="margin-top:14px">
+        <div class="panel"><div class="panel-head"><span class="panel-title">🚀 أكثر المدن تحسناً</span></div><div class="panel-body">
+          ${movers.slice(0,7).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--green)"></div></div><span class="br-val green-txt">${pct(ci.perf)}</span><span class="br-delta green-txt">▲${pct(ci.dp)}</span></div>`).join('')}
+        </div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-title">📉 أكثر المدن تدهوراً</span></div><div class="panel-body">
+          ${[...movers].sort((a,b)=>a.dp-b.dp).slice(0,7).map(ci=>`<div class="bar-row"><span class="br-label">${ci.city}</span><div class="br-track"><div class="br-fill" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--red)"></div></div><span class="br-val red-txt">${pct(ci.perf)}</span><span class="br-delta red-txt">▼${pct(Math.abs(ci.dp))}</span></div>`).join('')}
+        </div></div>
+      </div>
+      <div class="panel" style="margin-top:12px"><div class="panel-head"><span class="panel-title">مقارنة تفصيلية — كل المدن</span></div>
+      <div class="scroll-x"><table class="data-table"><thead><tr><th>المدينة</th><th>الأداء الحالي</th><th>الأداء السابق</th><th>Δ أداء</th><th>التوصيل الحالي</th><th>التوصيل السابق</th><th>Δ توصيل</th><th>Δ تأخير</th></tr></thead><tbody>
+      ${c.cities.map(ci=>{
+        const prev=pm[ci.city];
+        if(!prev)return`<tr><td style="color:var(--text)">${ci.city}</td><td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td><td colspan="6" class="no-comp">مدينة جديدة — لا بيانات سابقة</td></tr>`;
+        const dp=ci.perf-prev.perf;
+        const dd=ci.del-prev.del;
+        const dly=ci.delay-prev.delay;
+        return`<tr>
+          <td style="font-weight:600;color:var(--text)">${ci.city}</td>
+          <td><span class="pill ${perfPill(ci.perf)}">${pct(ci.perf)}</span></td>
+          <td><span class="pill ${perfPill(prev.perf)}">${pct(prev.perf)}</span></td>
+          <td class="${dp>0?'green-txt':'red-txt'}">${dp>0?'▲ ':'▼ '}${pct(Math.abs(dp))}</td>
+          <td>${pct(ci.del)}</td><td>${pct(prev.del)}</td>
+          <td class="${dd>0?'green-txt':'red-txt'}">${dd>0?'▲':'▼'}${pct(Math.abs(dd))}</td>
+          <td class="${dly<0?'green-txt':dly>2?'red-txt':''}">${dly>0?'+':''}${dly.toFixed(1)} دق</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div></div>`;
+    }
+  }
+
+  document.getElementById('main').innerHTML=tabBar+body;
+  if(activeTab==='captains') filterCaps();
+}
+
+window.switchTab=function(t){activeTab=t;render();}
+
+window.onCityChange=function(){
+  if(!currData)return;
+  const city=(document.getElementById('cap-city')||{}).value||'';
+  const storeEl=document.getElementById('cap-store');
+  if(storeEl){
+    const stores=city?[...new Set(currData.filter(r=>r.city===city).map(r=>r.store))].sort():[...new Set(currData.map(r=>r.store))].sort();
+    storeEl.innerHTML='<option value="">كل المتاجر</option>'+stores.map(s=>`<option>${s}</option>`).join('');
+  }
+  filterCaps();
+};
+
+window.filterCaps=function(){
+  if(!currData)return;
+  const q=(document.getElementById('cap-q')||{}).value||'';
+  const city=(document.getElementById('cap-city')||{}).value||'';
+  const store=(document.getElementById('cap-store')||{}).value||'';
+  const seg=(document.getElementById('cap-seg')||{}).value||'';
+  const sort=(document.getElementById('cap-sort')||{}).value||'perf_asc';
+  let rows=[...currData];
+  if(q)rows=rows.filter(r=>String(r.id).includes(q)||(r.name||'').toLowerCase().includes(q.toLowerCase())||(r.store||'').toLowerCase().includes(q.toLowerCase()));
+  if(city)rows=rows.filter(r=>r.city===city);
+  if(store)rows=rows.filter(r=>r.store===store);
+  if(seg==='critical')rows=rows.filter(r=>r.perf<0.33);
+  else if(seg==='poor')rows=rows.filter(r=>r.perf>=0.33&&r.perf<0.5);
+  else if(seg==='avg')rows=rows.filter(r=>r.perf>=0.5&&r.perf<0.7);
+  else if(seg==='good')rows=rows.filter(r=>r.perf>=0.7&&r.perf<0.85);
+  else if(seg==='elite')rows=rows.filter(r=>r.perf>=0.85);
+  if(sort==='perf_asc')rows.sort((a,b)=>a.perf-b.perf);
+  else if(sort==='perf_desc')rows.sort((a,b)=>b.perf-a.perf);
+  else if(sort==='orders')rows.sort((a,b)=>b.orders-a.orders);
+  else if(sort==='delay')rows.sort((a,b)=>b.delay-a.delay);
+  else if(sort==='bad')rows.sort((a,b)=>b.bad-a.bad);
+  const shown=rows.slice(0,80);
+  const cnt=document.getElementById('cap-count');
+  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} كابتن`;
+  const tbody=document.getElementById('cap-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=shown.map(r=>`<tr>
+    <td style="color:var(--text);font-weight:500">${r.id}</td>
+    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.name||''}">${r.name||'—'}</td>
+    <td>${r.city}</td><td style="font-size:10px">${r.store}</td>
+    <td>${r.orders}</td>
+    <td><span class="pill ${perfPill(r.perf)}">${pct(r.perf)}</span></td>
+    <td>${pct(r.pickup_pct)}</td>
+    <td class="${r.del_pct===0?'red-txt':''}">${pct(r.del_pct)}</td>
+    <td class="${r.delay>20?'red-txt':r.delay>10?'amber-txt':''}">${r.delay>0?r.delay.toFixed(1):'—'}</td>
+    <td class="${r.bad>=5?'red-txt':r.bad>=3?'amber-txt':''}">${r.bad.toFixed(1)}</td>
+    <td>${r.perf<0.33?'<span class="pill red">خطر</span>':r.perf<0.5?'<span class="pill amber">ضعيف</span>':r.perf>=0.85?'<span class="pill green">نخبة</span>':'<span class="pill gray">عادي</span>'}</td>
+  </tr>`).join('');
+}
+
+function loadFile(file,which){
+  parseFile(file,function(data){
+    if(which==='curr'){
+      currData=data;
+      const lbl=document.getElementById('curr-label');
+      document.getElementById('curr-text').textContent=file.name.substring(0,22);
+      document.getElementById('curr-icon').textContent='✅';
+      if(lbl)lbl.classList.add('loaded');
+    } else {
+      prevData=data;
+      const lbl=document.getElementById('prev-label');
+      document.getElementById('prev-text').textContent=file.name.substring(0,22);
+      document.getElementById('prev-icon').textContent='✅';
+      if(lbl)lbl.classList.add('loaded');
+    }
+    render();
+  });
+}
+
+document.getElementById('curr-file').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'curr')};
+document.getElementById('prev-file').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0],'prev')};
+
+// ── Theme toggle ──────────────────────────────────────────
+let isDark=true;
+window.toggleTheme=function(){
+  isDark=!isDark;
+  const root=document.documentElement;
+  root.setAttribute('data-theme',isDark?'dark':'light');
+  document.getElementById('t-day').className=isDark?'':'active';
+  document.getElementById('t-night').className=isDark?'active':'';
+  localStorage.setItem('ops-theme',isDark?'dark':'light');
+};
+(function initTheme(){
+  const saved=localStorage.getItem('ops-theme');
+  if(saved==='light'){isDark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('t-day').className='active';document.getElementById('t-night').className='';}
+  else{document.documentElement.setAttribute('data-theme','dark');}
+})();
+
+render();
+</script>
+</body>
+</html>
