@@ -198,9 +198,9 @@ const FIELDS = [
   { key:'perf',     label:'الأداء / الإنتاجية', desc:'performance / score',
     keywords:['performance','performnce','perf','score','productivity','rating','أداء','إنتاجية','kpi'] },
   { key:'pickup_pct', label:'نسبة الاستلام', desc:'pickup_success_pct',
-    keywords:['pickup_success','pickup_pct','on_time_pickup','pickup_rate','استلام','نسبة_استلام','acceptance'] },
+    keywords:['pickup_success_pct','pickup_success','pickup_pct','pickup_rate','استلام','نسبة_استلام','acceptance_rate'] },
   { key:'del_pct',  label:'نسبة التوصيل', desc:'delivery_success_rate_pct',
-    keywords:['delivery_success','delivery_pct','delivery_rate','on_time_delivery','توصيل','نسبة_توصيل','completion_rate','completion'] },
+    keywords:['delivery_success_rate_pct','delivery_success_pct','delivery_success','delivery_pct','delivery_rate','توصيل','نسبة_توصيل','completion_rate'] },
   { key:'delay',    label:'متوسط التأخير (دقيقة)', desc:'avg_delay_min',
     keywords:['avg_delay','delay','late','delay_min','تأخير','وقت_تأخير','lateness','avg_late'] },
   { key:'max_delay',label:'أقصى تأخير', desc:'max_delay_min',
@@ -227,9 +227,13 @@ function detectMap(headers){
         const kwL=kw.toLowerCase();
         let score=0;
         if(h.low===kwL)score=100;
-        else if(h.low.includes(kwL)||kwL.includes(h.low))score=60;
+        else if(h.low.includes(kwL)||kwL.includes(h.low)){
+          // Prefer _pct/_rate columns for rate fields
+          score=60;
+          if(kwL.includes('_pct')&&h.low.includes('_pct'))score=80;
+          if(kwL.includes('_rate')&&h.low.includes('_rate'))score=80;
+        }
         else{
-          // partial overlap
           const overlap=[...kwL].filter(c=>h.low.includes(c)).length;
           score=overlap/Math.max(kwL.length,h.low.length)*40;
         }
@@ -270,17 +274,20 @@ function extractRows(raw,map){
     // smart performance: if value > 1 assume it's percentage already
     let perf=gn('perf');
     if(perf!==null&&perf>1)perf=perf/100;
+    if(perf!==null&&perf>1)perf=null; // still >1 after div = count field, skip
     let pickup=gn('pickup_pct');
     if(pickup!==null&&pickup>1)pickup=pickup/100;
+    if(pickup!==null&&pickup>1)pickup=null;
     let del=gn('del_pct');
     if(del!==null&&del>1)del=del/100;
+    if(del!==null&&del>1)del=null;
     return{
       id:gs('id')||gs('store'),
       name:gs('name'),
       city:gs('city'),
       store:gs('store'),
       date:gs('date'),
-      orders:gn('orders')||0,
+      orders:Math.round(gn('orders')||0),
       perf:perf,
       pickup_pct:pickup,
       del_pct:del,
@@ -673,6 +680,7 @@ function renderEntities(c){
   if(c.hasDelay)cols.push({k:'delay',l:'تأخير'});
   if(c.hasBad)cols.push({k:'bad',l:'أيام سيئة'});
   if(c.hasCancel)cols.push({k:'cancel',l:'إلغاء'});
+  if(c.hasHandling)cols.push({k:'handling',l:'وقت التسليم عند العميل'});
   return`
   <div class="filter-row">
     <input class="fi inp" id="eq" placeholder="🔍 بحث بالمعرّف / الاسم / المتجر..." oninput="filterEnts()">
@@ -740,20 +748,36 @@ window.filterEnts=function(){
   const cols=[];
   if(c.has('id'))cols.push('id');if(c.has('name'))cols.push('name');
   if(c.has('city'))cols.push('city');if(c.has('store'))cols.push('store');
-  // date removedif(c.hasOrders)cols.push('orders');
+  if(c.hasOrders)cols.push('orders');
   if(c.hasPerf)cols.push('perf');if(c.hasDel)cols.push('del_pct');
   if(c.hasPickup)cols.push('pickup_pct');if(c.hasDelay)cols.push('delay');
   if(c.hasBad)cols.push('bad');if(c.hasCancel)cols.push('cancel');
+  if(c.hasHandling)cols.push('handling');
   tbody.innerHTML=shown.map(r=>`<tr>
     ${cols.map(col=>{
       const v=r[col];
-      if(col==='perf'||col==='del_pct'||col==='pickup_pct'||col==='cancel')return`<td>${v!==null?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
-      if(col==='delay')return`<td class="${v>20?'r-txt':v>10?'a-txt':''}">${v!==null?v.toFixed(1)+' دق':'—'}</td>`;
-      if(col==='bad')return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${v!==null?v.toFixed(1):'—'}</td>`;
-      if(col==='name')return`<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
-      return`<td style="color:var(--text)">${v||'—'}</td>`;
+      // ── Percentages only for these fields ──
+      if(col==='perf'||col==='del_pct'||col==='pickup_pct'||col==='cancel')
+        return`<td>${(v!==null&&v!==undefined)?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
+      // ── Orders: always integer number ──
+      if(col==='orders')
+        return`<td style="color:var(--text);font-weight:600">${(v!==null&&v!==undefined&&v!=='')?Math.round(+v):'—'}</td>`;
+      // ── Delay: minutes ──
+      if(col==='delay')
+        return`<td class="${v>20?'r-txt':v>10?'a-txt':''}">${(v!==null&&v!==undefined&&v!=='')?((+v).toFixed(1)+' دق'):'—'}</td>`;
+      // ── Bad days: integer + يوم ──
+      if(col==='bad')
+        return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${(v!==null&&v!==undefined&&v!=='')?Math.round(+v)+' يوم':'—'}</td>`;
+      // ── Handling: minutes ──
+      if(col==='handling')
+        return`<td class="${(+v)<0.5&&v?'r-txt':''}">${(v!==null&&v!==undefined&&v!=='')?((+v).toFixed(1)+' دق'):'—'}</td>`;
+      // ── Name: truncated ──
+      if(col==='name')
+        return`<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
+      // ── Default ──
+      return`<td style="color:var(--text)">${(v!==null&&v!==undefined&&v!=='')?v:'—'}</td>`;
     }).join('')}
-    <td>${r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':r.perf!==null?'<span class="pill x">عادي</span>':'<span class="pill x">—</span>'}</td>
+    <td>${(r.perf!==null&&r.perf!==undefined)?(r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
   </tr>`).join('');
 };
 
@@ -769,10 +793,12 @@ function capTable(rows,extraCols){
   ${rows.slice(0,50).map(r=>`<tr>
     ${cols.map(col=>{
       const v=r[col];
-      if(col==='perf'||col==='del_pct'||col==='pickup_pct')return`<td>${v!==null&&v!==undefined?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
+      if(col==='perf'||col==='del_pct'||col==='pickup_pct'||col==='cancel')return`<td>${(v!==null&&v!==undefined)?`<span class="pill ${pp(v)}">${pct(v)}</span>`:'—'}</td>`;
+      if(col==='orders')return`<td style="color:var(--text);font-weight:600">${(v!==null&&v!==undefined&&v!=='')?Math.round(+v):'—'}</td>`;
       if(col==='delay'||col==='max_delay')return`<td class="${v>20?'r-txt':v>10?'a-txt':''}">${v!==null&&v!==undefined?v.toFixed(1)+' دق':'—'}</td>`;
-      if(col==='bad')return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${v!==null&&v!==undefined?v.toFixed(1):'—'}</td>`;
-      if(col==='handling')return`<td class="${v<0.5?'r-txt':''}">${v!==null&&v!==undefined?v.toFixed(2)+' دق':'—'}</td>`;
+      if(col==='bad')return`<td class="${v>=5?'r-txt':v>=3?'a-txt':''}">${v!==null&&v!==undefined?Math.round(v)+' يوم':'—'}</td>`;
+      if(col==='handling')return`<td class="${+v<0.5&&(v!==null&&v!==undefined&&v!=='')?'r-txt':''}">${(v!==null&&v!==undefined&&v!=='')?((+v).toFixed(1)+' دق'):'—'}</td>`;
+      // orders handled above
       if(col==='name')return`<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
       return`<td style="color:var(--text)">${v!==null&&v!==undefined&&v!==''?v:'—'}</td>`;
     }).join('')}
