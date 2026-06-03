@@ -859,25 +859,246 @@ function renderAlerts(c){
 }
 
 function renderCompare(c,p){
-  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div>ارفع ملف الفترة السابقة لتفعيل المقارنة</div></div>`;
-  const pm={};p.cities.forEach(ci=>pm[ci.city]=ci);
-  const movers=c.cities.map(ci=>{const prev=pm[ci.city];return{...ci,dp:prev&&ci.perf!==null&&prev.perf!==null?ci.perf-prev.perf:null};}).filter(x=>x.dp!==null).sort((a,b)=>b.dp-a.dp);
-  const kpis=[];
-  if(c.hasPerf&&c.avgPerf!==null&&p.avgPerf!==null)kpis.push({l:'الأداء',cv:pct(c.avgPerf),pv:pct(p.avgPerf),d:c.avgPerf-p.avgPerf,better:'up'});
-  if(c.hasDel&&c.avgDel!==null&&p.avgDel!==null)kpis.push({l:'التوصيل',cv:pct(c.avgDel),pv:pct(p.avgDel),d:c.avgDel-p.avgDel,better:'up'});
-  if(c.hasDelay&&c.avgDelay!==null&&p.avgDelay!==null)kpis.push({l:'التأخير',cv:c.avgDelay.toFixed(1)+' دق',pv:p.avgDelay.toFixed(1)+' دق',d:c.avgDelay-p.avgDelay,better:'dn'});
-  if(c.hasPerf)kpis.push({l:'الإلغاء / zeroDel',cv:c.zeroDel,pv:p.zeroDel,d:c.zeroDel-p.zeroDel,better:'dn'});
-  let out=`<div class="kpi-grid">${kpis.map(k=>{const good=k.better==='up'?k.d>0:k.d<0;return`<div class="kpi ${good?'g':'r'}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.cv}</div><div class="kpi-sub ${good?'up':'dn'}">${k.d>0?'▲':'▼'} (كان ${k.pv})</div></div>`;}).join('')}</div>`;
-  out+=`<div class="two" style="margin-top:12px">
-    <div class="panel"><div class="ph"><span class="pt">🚀 أكثر المدن تحسناً</span></div><div class="pb">${movers.slice(0,7).map(ci=>`<div class="br"><span class="br-l">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--green)"></div></div><span class="br-v g-txt">${pct(ci.perf)}</span><span class="br-d g-txt">▲${pct(ci.dp)}</span></div>`).join('')}</div></div>
-    <div class="panel"><div class="ph"><span class="pt">📉 أكثر المدن تدهوراً</span></div><div class="pb">${[...movers].sort((a,b)=>a.dp-b.dp).slice(0,7).map(ci=>`<div class="br"><span class="br-l">${ci.city}</span><div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--red)"></div></div><span class="br-v r-txt">${pct(ci.perf)}</span><span class="br-d r-txt">▼${pct(Math.abs(ci.dp))}</span></div>`).join('')}</div></div>
-  </div>`;
-  return out;
+  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px">ارفع ملف الفترة السابقة لتفعيل المقارنة الكاملة</div>ارفع الملف من شريط الأدوات أعلاه</div></div>`;
+
+  // ── Build lookup maps ──
+  const pm={},sm={},cm_={};
+  p.cities.forEach(ci=>pm[ci.city]=ci);
+  p.stores.forEach(s=>sm[s.store]=s);
+  const pCapMap={};
+  p.raw.forEach(r=>{if(r.id)pCapMap[r.id]=r;});
+
+  // ── City movers ──
+  const cityMovers=c.cities.map(ci=>{
+    const prev=pm[ci.city];
+    return{...ci,dp:prev&&ci.perf!==null&&prev.perf!==null?+(ci.perf-prev.perf).toFixed(4):null,pp:prev?prev.perf:null,pDel:prev?prev.del:null,pDelay:prev?prev.delay:null};
+  }).filter(x=>x.dp!==null);
+
+  // ── Store movers ──
+  const storeMovers=c.stores.map(s=>{
+    const prev=sm[s.store];
+    return{...s,dp:prev&&s.perf!==null&&prev.perf!==null?+(s.perf-prev.perf).toFixed(4):null,pp:prev?prev.perf:null,pOrders:prev?prev.orders:null,pDel:prev?prev.del:null,pDelay:prev?prev.delay:null,isNew:!prev};
+  }).filter(x=>x.dp!==null);
+
+  // ── Captain movers ──
+  const capMovers=c.raw.filter(r=>r.id&&pCapMap[r.id]&&r.perf!==null&&pCapMap[r.id].perf!==null).map(r=>{
+    const prev=pCapMap[r.id];
+    return{...r,dp:+(r.perf-prev.perf).toFixed(4),pp:prev.perf,pOrders:prev.orders,pPickup:prev.pickup_pct,pDel:prev.del_pct,pDelay:prev.delay,pHandling:prev.handling};
+  });
+
+  // ── KPI summary ──
+  const topCity=cityMovers.length?[...cityMovers].sort((a,b)=>b.dp-a.dp)[0]:null;
+  const worstCity=cityMovers.length?[...cityMovers].sort((a,b)=>a.dp-b.dp)[0]:null;
+  const topStore=storeMovers.length?[...storeMovers].sort((a,b)=>b.dp-a.dp)[0]:null;
+  const worstStore=storeMovers.length?[...storeMovers].sort((a,b)=>a.dp-b.dp)[0]:null;
+  const topCap=capMovers.length?[...capMovers].sort((a,b)=>b.dp-a.dp)[0]:null;
+  const worstCap=capMovers.length?[...capMovers].sort((a,b)=>a.dp-b.dp)[0]:null;
+  const improvedStores=storeMovers.filter(s=>s.dp>0.01).length;
+  const improvedCaps=capMovers.filter(r=>r.dp>0.01).length;
+
+  // ── Delta helpers ──
+  const dTag=(d,rev=false)=>{
+    if(d===null||d===undefined)return'<span style="font-size:10px;color:var(--text3)">—</span>';
+    const good=rev?d<0:d>0;
+    const neu=Math.abs(d)<0.005;
+    if(neu)return'<span style="font-size:11px;color:var(--text3)">≈ بلا تغيير</span>';
+    return`<span style="font-size:11px;font-weight:600;color:${good?'var(--green)':'var(--red)'}">${d>0?'▲':'▼'} ${(Math.abs(d)*100).toFixed(1)}pp</span>`;
+  };
+  const dNum=(curr,prev,rev=false)=>{
+    if(curr===null||prev===null||prev===undefined)return'<span style="font-size:10px;color:var(--text3)">—</span>';
+    const d=curr-prev;const neu=Math.abs(d)<0.5;
+    if(neu)return`<span style="font-size:11px;color:var(--text3)">${curr}</span>`;
+    const good=rev?d<0:d>0;
+    return`<span style="font-size:11px;font-weight:600;color:${good?'var(--green)':'var(--red)'}">${d>0?'+':''}${d.toFixed(0)}</span>`;
+  };
+
+  // ── Insights engine ──
+  const insights=[];
+  if(c.avgPerf!==null&&p.avgPerf!==null){
+    const d=c.avgPerf-p.avgPerf;
+    if(d<-0.03)insights.push({type:'r',txt:`الأداء العام تراجع ${(Math.abs(d)*100).toFixed(1)}pp — مراجعة عاجلة للمتاجر والكباتن المتراجعة`});
+    else if(d>0.03)insights.push({type:'g',txt:`الأداء العام تحسن ${(d*100).toFixed(1)}pp — استمر في نفس الاستراتيجية`});
+  }
+  if(c.avgDel!==null&&p.avgDel!==null&&c.avgDel-p.avgDel<-0.03)
+    insights.push({type:'r',txt:`معدل التوصيل انخفض ${((p.avgDel-c.avgDel)*100).toFixed(1)}pp — فحص مشاكل آخر ميل`});
+  if(worstStore&&worstStore.dp<-0.05)
+    insights.push({type:'r',txt:`متجر "${worstStore.store}" تراجع ${(Math.abs(worstStore.dp)*100).toFixed(1)}pp — يحتاج تدخلاً ميدانياً فورياً`});
+  if(worstCap&&worstCap.dp<-0.1)
+    insights.push({type:'r',txt:`كابتن (${worstCap.id}) تراجع ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp — متابعة وتدريب عاجل`});
+  if(topStore&&topStore.dp>0.05)
+    insights.push({type:'g',txt:`متجر "${topStore.store}" تحسن ${(topStore.dp*100).toFixed(1)}pp — ادرس أسباب نجاحه وانسخها`});
+  if(storeMovers.filter(s=>s.dp<-0.05).length>5)
+    insights.push({type:'a',txt:`${storeMovers.filter(s=>s.dp<-0.05).length} متجراً تراجع أداؤها فوق 5pp — قد يكون سبباً مشتركاً (ضغط طلبات / نقص كباتن)`});
+  if(capMovers.filter(r=>r.dp<-0.1).length>20)
+    insights.push({type:'a',txt:`${capMovers.filter(r=>r.dp<-0.1).length} كابتناً تراجعوا فوق 10pp — مراجعة التوزيع الجغرافي وضغط الطلبات`});
+  if(!insights.length)insights.push({type:'b',txt:'لا توجد تغييرات جوهرية بين الفترتين — الأداء مستقر'});
+
+  // ── Render helpers ──
+  const badge=(d)=>{
+    if(d===null)return'';
+    if(d>0.01)return`<span class="pill g">▲ ${(d*100).toFixed(1)}%</span>`;
+    if(d<-0.01)return`<span class="pill r">▼ ${(Math.abs(d)*100).toFixed(1)}%</span>`;
+    return`<span class="pill x">≈</span>`;
+  };
+
+  const moverTable=(rows,label,cols,keyFn)=>{
+    if(!rows.length)return`<div class="empty" style="padding:16px">لا بيانات كافية للمقارنة</div>`;
+    return`<div class="scroll-x"><table class="tbl"><thead><tr>
+      <th>${label}</th>${cols.map(c=>`<th>${c.l}</th>`).join('')}<th>التغيير</th><th>الحكم</th>
+    </tr></thead><tbody>
+    ${rows.slice(0,15).map(r=>`<tr>
+      <td style="font-weight:600;color:var(--text);font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${keyFn(r)}</td>
+      ${cols.map(col=>{
+        const cv=r[col.k],pv=r[col.pk];
+        if(col.type==='pct')return`<td><span class="pill ${pp(cv)}">${pct(cv)}</span> ${pv!==null&&pv!==undefined?`<span style="font-size:9px;color:var(--text3)">(${pct(pv)})</span>`:''}</td>`;
+        if(col.type==='num')return`<td style="color:var(--text)">${cv!==null?Math.round(cv):'—'} ${pv!==null&&pv!==undefined?`<span style="font-size:9px;color:var(--text3)">(${Math.round(pv)})</span>`:''}</td>`;
+        if(col.type==='min')return`<td class="${cv>20?'r-txt':cv>10?'a-txt':''}">${cv!==null?cv.toFixed(1)+' دق':'—'} ${pv!==null&&pv!==undefined?`<span style="font-size:9px;color:var(--text3)">(${pv.toFixed(1)})</span>`:''}</td>`;
+        return`<td>${cv||'—'}</td>`;
+      }).join('')}
+      <td>${dTag(r.dp)}</td>
+      <td>${r.dp>0.05?'<span class="pill g">تحسّن</span>':r.dp<-0.05?'<span class="pill r">تراجع</span>':r.dp>0.01?'<span class="pill b">جيد</span>':'<span class="pill x">مستقر</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  };
+
+  return`
+  <!-- KPI STRIP -->
+  <div class="kpi-grid" style="margin-bottom:14px">
+    ${c.avgPerf!==null&&p.avgPerf!==null?`<div class="kpi ${c.avgPerf>p.avgPerf?'g':'r'}"><div class="kpi-lbl">الأداء العام</div><div class="kpi-val">${pct(c.avgPerf)}</div><div class="kpi-sub ${c.avgPerf>p.avgPerf?'up':'dn'}">${c.avgPerf>p.avgPerf?'▲':'▼'} (كان ${pct(p.avgPerf)})</div></div>`:''}
+    ${c.avgDel!==null&&p.avgDel!==null?`<div class="kpi ${c.avgDel>p.avgDel?'g':'r'}"><div class="kpi-lbl">التوصيل الناجح</div><div class="kpi-val">${pct(c.avgDel)}</div><div class="kpi-sub ${c.avgDel>p.avgDel?'up':'dn'}">${c.avgDel>p.avgDel?'▲':'▼'} (كان ${pct(p.avgDel)})</div></div>`:''}
+    <div class="kpi ${c.zeroDel<p.zeroDel?'g':'r'}"><div class="kpi-lbl">إلغاء / zeroDel</div><div class="kpi-val">${c.zeroDel}</div><div class="kpi-sub ${c.zeroDel<p.zeroDel?'up':'dn'}">${c.zeroDel<p.zeroDel?'▼ تحسن':'▲ تراجع'} (كان ${p.zeroDel})</div></div>
+    ${improvedStores?`<div class="kpi g"><div class="kpi-lbl">متاجر تحسّنت</div><div class="kpi-val">${improvedStores}</div><div class="kpi-sub neu">من ${storeMovers.length} متجر مقارَن</div></div>`:''}
+    ${improvedCaps?`<div class="kpi g"><div class="kpi-lbl">كباتن تحسّنوا</div><div class="kpi-val">${improvedCaps}</div><div class="kpi-sub neu">من ${capMovers.length} كابتن مقارَن</div></div>`:''}
+    ${topStore?`<div class="kpi g"><div class="kpi-lbl">🏆 أكبر تحسن متجر</div><div class="kpi-val" style="font-size:13px">${topStore.store}</div><div class="kpi-sub up">▲ ${(topStore.dp*100).toFixed(1)}pp</div></div>`:''}
+    ${worstStore?`<div class="kpi r"><div class="kpi-lbl">📉 أكبر تراجع متجر</div><div class="kpi-val" style="font-size:13px">${worstStore.store}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstStore.dp)*100).toFixed(1)}pp</div></div>`:''}
+    ${topCap?`<div class="kpi g"><div class="kpi-lbl">⭐ أفضل كابتن</div><div class="kpi-val" style="font-size:13px">${String(topCap.name||topCap.id).substring(0,16)}</div><div class="kpi-sub up">▲ ${(topCap.dp*100).toFixed(1)}pp</div></div>`:''}
+    ${worstCap?`<div class="kpi r"><div class="kpi-lbl">⚠️ يحتاج متابعة</div><div class="kpi-val" style="font-size:13px">${String(worstCap.name||worstCap.id).substring(0,16)}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp</div></div>`:''}
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🧠 Insights تلقائية</span><span class="info-chip">${insights.length} اكتشاف</span></div>
+    <div class="alerts">
+      ${insights.map(ins=>`<div class="alert-row">
+        <span class="alert-badge ${ins.type==='r'?'r':ins.type==='g'?'b':'a'}">${ins.type==='r'?'⚠️ تنبيه':ins.type==='g'?'✅ فرصة':'💡 ملاحظة'}</span>
+        <div class="alert-desc">${ins.txt}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- CITY COMPARISON -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🏙️ مقارنة المدن</span><span class="info-chip">${cityMovers.length} مدينة مقارَنة</span></div>
+    <div class="two" style="padding:12px;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;padding:0 2px">🚀 أكثر المدن تحسناً</div>
+        ${[...cityMovers].sort((a,b)=>b.dp-a.dp).slice(0,7).map(ci=>`
+          <div class="br"><span class="br-l">${ci.city}</span>
+          <div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--green)"></div></div>
+          <span class="br-v g-txt">${pct(ci.perf)}</span>
+          <span class="br-d g-txt">▲${(ci.dp*100).toFixed(1)}pp</span></div>`).join('')}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;padding:0 2px">📉 أكثر المدن تراجعاً</div>
+        ${[...cityMovers].sort((a,b)=>a.dp-b.dp).slice(0,7).map(ci=>`
+          <div class="br"><span class="br-l">${ci.city}</span>
+          <div class="br-t"><div class="br-f" style="width:${(ci.perf*100).toFixed(0)}%;background:var(--red)"></div></div>
+          <span class="br-v r-txt">${pct(ci.perf)}</span>
+          <span class="br-d r-txt">▼${(Math.abs(ci.dp)*100).toFixed(1)}pp</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="scroll-x" style="padding:0 12px 12px">
+      <table class="tbl"><thead><tr>
+        <th>المدينة</th><th>الأداء الحالي</th><th>الأداء السابق</th><th>Δ أداء</th>
+        <th>التوصيل الحالي</th><th>التوصيل السابق</th><th>Δ توصيل</th>
+        <th>Δ تأخير</th><th>الحكم</th>
+      </tr></thead><tbody>
+      ${cityMovers.sort((a,b)=>b.dp-a.dp).map(ci=>{
+        const dDelay=ci.delay!==null&&ci.pDelay!==null?ci.delay-ci.pDelay:null;
+        const dDel=ci.del!==null&&ci.pDel!==null?ci.del-ci.pDel:null;
+        return`<tr>
+          <td style="font-weight:600;color:var(--text)">${ci.city}</td>
+          <td><span class="pill ${pp(ci.perf)}">${pct(ci.perf)}</span></td>
+          <td><span class="pill ${pp(ci.pp)}">${pct(ci.pp)}</span></td>
+          <td>${dTag(ci.dp)}</td>
+          <td>${pct(ci.del)}</td><td>${pct(ci.pDel)}</td>
+          <td>${dDel!==null?dTag(dDel):'—'}</td>
+          <td class="${dDelay!==null?(dDelay<0?'g-txt':dDelay>2?'r-txt':''):''}">
+            ${dDelay!==null?(dDelay>0?'+':'')+dDelay.toFixed(1)+' دق':'—'}</td>
+          <td>${ci.dp>0.05?'<span class="pill g">تحسّن</span>':ci.dp<-0.05?'<span class="pill r">تراجع</span>':'<span class="pill x">مستقر</span>'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- STORE COMPARISON -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🏪 مقارنة المتاجر</span><span class="info-chip">${storeMovers.length} متجر مقارَن</span></div>
+    <div class="two" style="padding:12px;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px">🚀 أفضل المتاجر تحسناً</div>
+        ${[...storeMovers].sort((a,b)=>b.dp-a.dp).slice(0,6).map(s=>`
+          <div class="br"><span class="br-l" style="font-size:9px;width:90px" title="${s.store}">${s.store}</span>
+          <div class="br-t"><div class="br-f" style="width:${(s.perf*100).toFixed(0)}%;background:var(--green)"></div></div>
+          <span class="br-v g-txt">${pct(s.perf)}</span>
+          <span class="br-d g-txt">▲${(s.dp*100).toFixed(1)}pp</span></div>`).join('')}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">📉 أكثر المتاجر تراجعاً</div>
+        ${[...storeMovers].sort((a,b)=>a.dp-b.dp).slice(0,6).map(s=>`
+          <div class="br"><span class="br-l" style="font-size:9px;width:90px" title="${s.store}">${s.store}</span>
+          <div class="br-t"><div class="br-f" style="width:${(s.perf*100).toFixed(0)}%;background:var(--red)"></div></div>
+          <span class="br-v r-txt">${pct(s.perf)}</span>
+          <span class="br-d r-txt">▼${(Math.abs(s.dp)*100).toFixed(1)}pp</span></div>`).join('')}
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);padding:0 14px 8px">جدول تفصيلي — أسوأ 20 متجراً بعد المقارنة</div>
+    ${moverTable([...storeMovers].sort((a,b)=>a.dp-b.dp).slice(0,20),'المتجر',[
+      {k:'perf',pk:'pp',l:'الأداء الحالي',type:'pct'},
+      {k:'orders',pk:'pOrders',l:'الطلبات',type:'num'},
+      {k:'del',pk:'pDel',l:'التوصيل',type:'pct'},
+      {k:'delay',pk:'pDelay',l:'التأخير',type:'min'},
+    ],r=>r.store)}
+  </div>
+
+  <!-- CAPTAIN COMPARISON -->
+  ${capMovers.length?`<div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">👤 مقارنة الكباتن</span><span class="info-chip">${capMovers.length} كابتن مقارَن</span></div>
+    <div class="two" style="padding:12px;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px">⭐ أفضل الكباتن تحسناً</div>
+        ${[...capMovers].sort((a,b)=>b.dp-a.dp).slice(0,6).map(r=>`
+          <div class="br">
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
+            <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--green)"></div></div>
+            <span class="br-v g-txt">${pct(r.perf)}</span>
+            <span class="br-d g-txt">▲${(r.dp*100).toFixed(1)}pp</span>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ أكثر الكباتن تراجعاً</div>
+        ${[...capMovers].sort((a,b)=>a.dp-b.dp).slice(0,6).map(r=>`
+          <div class="br">
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
+            <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--red)"></div></div>
+            <span class="br-v r-txt">${pct(r.perf)}</span>
+            <span class="br-d r-txt">▼${(Math.abs(r.dp)*100).toFixed(1)}pp</span>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);padding:0 14px 8px">أكثر 20 كابتناً تراجعاً — بحاجة متابعة وتدريب</div>
+    ${moverTable([...capMovers].sort((a,b)=>a.dp-b.dp).slice(0,20),'الكابتن',[
+      {k:'perf',pk:'pp',l:'الأداء',type:'pct'},
+      {k:'orders',pk:'pOrders',l:'الطلبات',type:'num'},
+      {k:'pickup_pct',pk:'pPickup',l:'الاستلام',type:'pct'},
+      {k:'del_pct',pk:'pDel',l:'التوصيل',type:'pct'},
+      {k:'delay',pk:'pDelay',l:'التأخير',type:'min'},
+      {k:'handling',pk:'pHandling',l:'وقت العميل',type:'min'},
+    ],r=>String(r.name||r.id).substring(0,16))}
+  </div>`:'<div class="panel"><div class="empty" style="padding:20px">لا توجد كباتن مشتركون بين الفترتين للمقارنة المباشرة</div></div>'}`;
 }
 
-// ══════════════════════════════════════════════
-//  WELCOME SCREEN
-// ══════════════════════════════════════════════
 function renderWelcome(){
   document.getElementById('main').innerHTML=`
   <label class="drop-zone" id="dz">
