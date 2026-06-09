@@ -146,6 +146,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
 .g-txt{color:var(--green)}.r-txt{color:var(--red)}.a-txt{color:var(--amber)}.b-txt{color:var(--blue)}
 .compare-badge{font-size:10px;padding:2px 7px;border-radius:3px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(43,127,212,.25);font-family:var(--font-head);font-weight:600}
 .info-chip{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.exp-wrap{position:relative;display:flex}
+.btn-export{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--green),#0a9e66);color:#06281b;border:none;padding:7px 13px;border-radius:7px;font-size:11px;font-weight:700;font-family:var(--font-head);cursor:pointer;white-space:nowrap;transition:.15s}
+.btn-export:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-export:disabled{opacity:.6;cursor:wait;transform:none}
+.exp-menu{position:absolute;top:calc(100% + 7px);inset-inline-start:0;min-width:235px;max-width:85vw;background:var(--bg2);border:1px solid var(--border2);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:5px;display:none;z-index:99}
+.exp-menu.open{display:block}
+.exp-item{display:flex;gap:9px;align-items:center;padding:8px 9px;border-radius:6px;cursor:pointer;font-size:11px}
+.exp-item:hover{background:var(--bg3)}
+.exp-l{font-weight:600;color:var(--text)}
+.exp-s{font-size:9px;color:var(--text3);margin-top:1px}
+.sel-td{width:26px;text-align:center}
+.sel-td input,#esel-all{accent-color:var(--green);cursor:pointer;width:13px;height:13px;vertical-align:middle}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,12px);background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:9px;font-size:12px;font-family:var(--font-mono);box-shadow:0 8px 28px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.25s;z-index:999;text-align:center;max-width:90vw;line-height:1.7}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.ok{border-color:rgba(0,196,122,.5)}
+.toast.err{border-color:rgba(232,51,74,.5)}
 @media(max-width:600px){.two,.three{grid-template-columns:1fr}.topbar{flex-wrap:wrap}}
 </style>
 </head>
@@ -161,6 +177,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
       <input type="file" id="f-prev" accept=".xlsx,.xls,.csv">
       <span id="ic-prev">📅</span><span id="tx-prev">مقارنة بالفترة السابقة</span>
     </label>
+    <div class="exp-wrap" id="exp-wrap" style="display:none">
+      <button class="btn-export" id="btn-export" onclick="toggleExpMenu(event)">📥 تصدير إلى Excel <span style="font-size:9px">▾</span></button>
+      <div class="exp-menu" id="exp-menu"></div>
+    </div>
   </div>
   <div class="topbar-right">
     <div class="status-wrap"><div class="dot" id="sdot"></div><span style="font-size:10px;color:var(--text2)" id="slbl">بانتظار ملف</span></div>
@@ -175,6 +195,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
 //  STATE
 // ══════════════════════════════════════════════
 let currRaw=null,prevRaw=null,currMap=null,prevMap=null;
+let selEnts=new Set();let _lastFilteredEnts=[];
 let currAgg=null,prevAgg=null;
 let activeTab='overview';
 let isDark=true;
@@ -439,6 +460,7 @@ function dH(curr,prev,better){
 //  RENDER MAPPING UI
 // ══════════════════════════════════════════════
 function renderMapUI(fileInfo, which){
+  const _ew0=document.getElementById('exp-wrap');if(_ew0)_ew0.style.display='none';
   const map=detectMap(fileInfo.headers);
   const optionsHtml='<option value="">— لا يوجد —</option>'+fileInfo.headers.map(h=>`<option value="${h}">${h}</option>`).join('');
   const autoCount=FIELDS.filter(f=>map[f.key]&&map[f.key].auto).length;
@@ -500,6 +522,7 @@ window.confirmMap=function(which){
   const {fileInfo}=window._pendingFile;
   const rows=extractRows(fileInfo.raw,map);
   if(which==='curr'){
+    selEnts.clear();
     currRaw=fileInfo.raw;currMap=map;currAgg=buildAgg(rows,map);
     document.getElementById('ic-curr').textContent='✅';
     document.getElementById('tx-curr').textContent=fileInfo.name.substring(0,20);
@@ -541,6 +564,7 @@ function renderDash(){
   else if(activeTab==='compare') body=renderCompare(c,p);
 
   document.getElementById('main').innerHTML=tabBar+body;
+  const _ew=document.getElementById('exp-wrap');if(_ew)_ew.style.display='flex';
   if(activeTab==='entities')filterEnts();
 }
 
@@ -703,7 +727,7 @@ function renderEntities(c){
   </div>
   <div class="panel"><div class="ph"><span class="pt" id="ect">تحميل...</span></div>
   <div class="scroll-x"><table class="tbl"><thead><tr>
-    ${cols.map(col=>`<th>${col.l}</th>`).join('')}<th>الحالة</th>
+    <th style="width:26px"><input type="checkbox" id="esel-all" onchange="toggleSelAll(this)" title="تحديد كل النتائج المفلترة"></th>${cols.map(col=>`<th>${col.l}</th>`).join('')}<th>الحالة</th>
   </tr></thead><tbody id="etbody"></tbody></table></div></div>`;
 }
 
@@ -718,33 +742,25 @@ window.onECityChange=function(){
   filterEnts();
 };
 
-window.filterEnts=function(){
-  if(!currAgg)return;
-  const c=currAgg;
-  const q=(document.getElementById('eq')||{}).value||'';
-  const city=(document.getElementById('ecy')||{}).value||'';
-  const store=(document.getElementById('est')||{}).value||'';
-  const seg=(document.getElementById('eseg')||{}).value||'';
-  const sort=(document.getElementById('esort')||{}).value||'';
-  let rows=[...c.raw];
-  if(q)rows=rows.filter(r=>String(r.id||'').includes(q)||(r.name||'').toLowerCase().includes(q.toLowerCase())||(r.store||'').toLowerCase().includes(q.toLowerCase()));
-  if(city)rows=rows.filter(r=>r.city===city);
-  if(store)rows=rows.filter(r=>r.store===store);
-  if(seg==='critical')rows=rows.filter(r=>r.perf!==null&&r.perf<0.33);
-  else if(seg==='poor')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.33&&r.perf<0.5);
-  else if(seg==='avg')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.5&&r.perf<0.7);
-  else if(seg==='good')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.7&&r.perf<0.85);
-  else if(seg==='elite')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.85);
+// ── Entities filter pipeline (shared by table + export) ──
+function entFilterVals(){
+  return{
+    q:(document.getElementById('eq')||{}).value||'',
+    city:(document.getElementById('ecy')||{}).value||'',
+    store:(document.getElementById('est')||{}).value||'',
+    seg:(document.getElementById('eseg')||{}).value||'',
+    sort:(document.getElementById('esort')||{}).value||''
+  };
+}
+function sortEnts(rows,sort){
   if(sort==='perf_asc')rows.sort((a,b)=>(a.perf||0)-(b.perf||0));
   else if(sort==='perf_desc')rows.sort((a,b)=>(b.perf||0)-(a.perf||0));
   else if(sort==='orders')rows.sort((a,b)=>(b.orders||0)-(a.orders||0));
   else if(sort==='delay')rows.sort((a,b)=>(b.delay||0)-(a.delay||0));
   else if(sort==='bad')rows.sort((a,b)=>(b.bad||0)-(a.bad||0));
-  const shown=rows.slice(0,100);
-  const cnt=document.getElementById('ect');
-  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} سجل`;
-  const tbody=document.getElementById('etbody');
-  if(!tbody)return;
+  return rows;
+}
+function entityCols(c){
   const cols=[];
   if(c.has('id'))cols.push('id');if(c.has('name'))cols.push('name');
   if(c.has('city'))cols.push('city');if(c.has('store'))cols.push('store');
@@ -753,7 +769,37 @@ window.filterEnts=function(){
   if(c.hasPickup)cols.push('pickup_pct');if(c.hasDelay)cols.push('delay');
   if(c.hasBad)cols.push('bad');if(c.hasCancel)cols.push('cancel');
   if(c.hasHandling)cols.push('handling');
+  return cols;
+}
+function computeFilteredEnts(){
+  const c=currAgg;if(!c)return[];
+  if(c.raw.length&&c.raw[0]._ix===undefined)c.raw.forEach((r,i)=>r._ix=i);
+  const f=entFilterVals();
+  let rows=[...c.raw];
+  if(f.q)rows=rows.filter(r=>String(r.id||'').includes(f.q)||(r.name||'').toLowerCase().includes(f.q.toLowerCase())||(r.store||'').toLowerCase().includes(f.q.toLowerCase()));
+  if(f.city)rows=rows.filter(r=>r.city===f.city);
+  if(f.store)rows=rows.filter(r=>r.store===f.store);
+  if(f.seg==='critical')rows=rows.filter(r=>r.perf!==null&&r.perf<0.33);
+  else if(f.seg==='poor')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.33&&r.perf<0.5);
+  else if(f.seg==='avg')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.5&&r.perf<0.7);
+  else if(f.seg==='good')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.7&&r.perf<0.85);
+  else if(f.seg==='elite')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.85);
+  sortEnts(rows,f.sort);
+  return rows;
+}
+window.filterEnts=function(){
+  if(!currAgg)return;
+  const c=currAgg;
+  const rows=computeFilteredEnts();
+  _lastFilteredEnts=rows;
+  const shown=rows.slice(0,100);
+  const cnt=document.getElementById('ect');
+  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} سجل`+(selEnts.size?` — ✓ محدد: ${selEnts.size}`:'');
+  const tbody=document.getElementById('etbody');
+  if(!tbody)return;
+  const cols=entityCols(c);
   tbody.innerHTML=shown.map(r=>`<tr>
+    <td class="sel-td"><input type="checkbox" class="esel" data-ix="${r._ix}" ${selEnts.has(r._ix)?'checked':''} onchange="toggleSel(this)"></td>
     ${cols.map(col=>{
       const v=r[col];
       // ── Percentages only for these fields ──
@@ -779,6 +825,31 @@ window.filterEnts=function(){
     }).join('')}
     <td>${(r.perf!==null&&r.perf!==undefined)?(r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
   </tr>`).join('');
+  const all=document.getElementById('esel-all');
+  if(all){
+    const selInFilter=rows.reduce((s,r)=>s+(selEnts.has(r._ix)?1:0),0);
+    all.checked=rows.length>0&&selInFilter===rows.length;
+    all.indeterminate=selInFilter>0&&selInFilter<rows.length;
+  }
+};
+window.toggleSel=function(cb){
+  const ix=+cb.dataset.ix;
+  if(cb.checked)selEnts.add(ix);else selEnts.delete(ix);
+  const rows=_lastFilteredEnts;
+  const cnt=document.getElementById('ect');
+  if(cnt)cnt.textContent=`عرض ${Math.min(rows.length,100)} من ${rows.length} سجل`+(selEnts.size?` — ✓ محدد: ${selEnts.size}`:'');
+  const all=document.getElementById('esel-all');
+  if(all){
+    const selInFilter=rows.reduce((s,r)=>s+(selEnts.has(r._ix)?1:0),0);
+    all.checked=rows.length>0&&selInFilter===rows.length;
+    all.indeterminate=selInFilter>0&&selInFilter<rows.length;
+  }
+};
+window.toggleSelAll=function(cb){
+  const rows=_lastFilteredEnts;
+  if(cb.checked)rows.forEach(r=>selEnts.add(r._ix));
+  else rows.forEach(r=>selEnts.delete(r._ix));
+  filterEnts();
 };
 
 function capTable(rows,extraCols){
@@ -807,7 +878,7 @@ function capTable(rows,extraCols){
   </tbody></table></div>`;
 }
 
-function renderAlerts(c){
+function computeSignals(c){
   // Build per-signal captain lists
   const signals=[];
 
@@ -840,7 +911,11 @@ function renderAlerts(c){
 
   if(!signals.length)
     signals.push({type:'b',code:'OK',title:'لا تنبيهات حرجة',desc:'المؤشرات ضمن الحدود المقبولة.',rows:[],cols:[]});
+  return signals;
+}
 
+function renderAlerts(c){
+  const signals=computeSignals(c);
   const panelsHtml=signals.map(sig=>`
     <div class="panel" style="margin-bottom:12px">
       <div class="ph">
@@ -858,9 +933,7 @@ function renderAlerts(c){
     <div class="alerts">${c.suggestions.map((s,i)=>`<div class="alert-row"><span class="alert-badge b">#${i+1}</span><div><div class="alert-desc">${s}</div></div></div>`).join('')}</div></div>`:'');
 }
 
-function renderCompare(c,p){
-  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px">ارفع ملف الفترة السابقة لتفعيل المقارنة الكاملة</div>ارفع الملف من شريط الأدوات أعلاه</div></div>`;
-
+function computeMovers(c,p){
   // ── Build lookup maps ──
   const pm={},sm={},cm_={};
   p.cities.forEach(ci=>pm[ci.city]=ci);
@@ -885,6 +958,13 @@ function renderCompare(c,p){
     const prev=pCapMap[r.id];
     return{...r,dp:+(r.perf-prev.perf).toFixed(4),pp:prev.perf,pOrders:prev.orders,pPickup:prev.pickup_pct,pDel:prev.del_pct,pDelay:prev.delay,pHandling:prev.handling};
   });
+  return{cityMovers,storeMovers,capMovers};
+}
+
+function renderCompare(c,p){
+  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px">ارفع ملف الفترة السابقة لتفعيل المقارنة الكاملة</div>ارفع الملف من شريط الأدوات أعلاه</div></div>`;
+
+  const {cityMovers,storeMovers,capMovers}=computeMovers(c,p);
 
   // ── KPI summary ──
   const topCity=cityMovers.length?[...cityMovers].sort((a,b)=>b.dp-a.dp)[0]:null;
@@ -971,8 +1051,8 @@ function renderCompare(c,p){
     ${improvedCaps?`<div class="kpi g"><div class="kpi-lbl">كباتن تحسّنوا</div><div class="kpi-val">${improvedCaps}</div><div class="kpi-sub neu">من ${capMovers.length} كابتن مقارَن</div></div>`:''}
     ${topStore?`<div class="kpi g"><div class="kpi-lbl">🏆 أكبر تحسن متجر</div><div class="kpi-val" style="font-size:13px">${topStore.store}</div><div class="kpi-sub up">▲ ${(topStore.dp*100).toFixed(1)}pp</div></div>`:''}
     ${worstStore?`<div class="kpi r"><div class="kpi-lbl">📉 أكبر تراجع متجر</div><div class="kpi-val" style="font-size:13px">${worstStore.store}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstStore.dp)*100).toFixed(1)}pp</div></div>`:''}
-    ${topCap?`<div class="kpi g"><div class="kpi-lbl">⭐ أفضل كابتن</div><div class="kpi-val" style="font-size:13px">${String(topCap.name||topCap.id).substring(0,16)}</div><div class="kpi-sub up">▲ ${(topCap.dp*100).toFixed(1)}pp</div></div>`:''}
-    ${worstCap?`<div class="kpi r"><div class="kpi-lbl">⚠️ يحتاج متابعة</div><div class="kpi-val" style="font-size:13px">${String(worstCap.name||worstCap.id).substring(0,16)}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp</div></div>`:''}
+    ${topCap?`<div class="kpi g"><div class="kpi-lbl">⭐ أفضل كابتن</div><div class="kpi-val" style="font-size:13px">${String(topCap.id||topCap.name).substring(0,16)}</div><div class="kpi-sub up">▲ ${(topCap.dp*100).toFixed(1)}pp</div></div>`:''}
+    ${worstCap?`<div class="kpi r"><div class="kpi-lbl">⚠️ يحتاج متابعة</div><div class="kpi-val" style="font-size:13px">${String(worstCap.id||worstCap.name).substring(0,16)}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp</div></div>`:''}
   </div>
 
   <!-- INSIGHTS -->
@@ -1070,7 +1150,7 @@ function renderCompare(c,p){
         <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px">⭐ أفضل الكباتن تحسناً</div>
         ${[...capMovers].sort((a,b)=>b.dp-a.dp).slice(0,6).map(r=>`
           <div class="br">
-            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,12)}</span>
             <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--green)"></div></div>
             <span class="br-v g-txt">${pct(r.perf)}</span>
             <span class="br-d g-txt">▲${(r.dp*100).toFixed(1)}pp</span>
@@ -1080,7 +1160,7 @@ function renderCompare(c,p){
         <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ أكثر الكباتن تراجعاً</div>
         ${[...capMovers].sort((a,b)=>a.dp-b.dp).slice(0,6).map(r=>`
           <div class="br">
-            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,12)}</span>
             <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--red)"></div></div>
             <span class="br-v r-txt">${pct(r.perf)}</span>
             <span class="br-d r-txt">▼${(Math.abs(r.dp)*100).toFixed(1)}pp</span>
@@ -1095,11 +1175,341 @@ function renderCompare(c,p){
       {k:'del_pct',pk:'pDel',l:'التوصيل',type:'pct'},
       {k:'delay',pk:'pDelay',l:'التأخير',type:'min'},
       {k:'handling',pk:'pHandling',l:'وقت العميل',type:'min'},
-    ],r=>String(r.name||r.id).substring(0,16))}
+    ],r=>`<span title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,16)}</span>`)}
   </div>`:'<div class="panel"><div class="empty" style="padding:20px">لا توجد كباتن مشتركون بين الفترتين للمقارنة المباشرة</div></div>'}`;
 }
 
+
+// ══════════════════════════════════════════════
+//  EXPORT TO EXCEL (.xlsx)
+// ══════════════════════════════════════════════
+const EXP_LABELS = {
+  id:'المعرّف', name:'الاسم', city:'المدينة', store:'المتجر', date:'التاريخ',
+  orders:'الطلبات', perf:'الأداء', pickup_pct:'نسبة الاستلام', del_pct:'نسبة التوصيل',
+  delay:'متوسط التأخير (دقيقة)', max_delay:'أقصى تأخير (دقيقة)', cancel:'نسبة الإلغاء',
+  bad:'الأيام السيئة', handling:'وقت التعامل (دقيقة)', country:'الدولة'
+};
+const EXP_LABELS_EN = {
+  id:'ID', name:'Name', city:'City', store:'Store', date:'Date',
+  orders:'Orders', perf:'Performance', pickup_pct:'Pickup %', del_pct:'Delivery %',
+  delay:'Avg Delay (min)', max_delay:'Max Delay (min)', cancel:'Cancel %',
+  bad:'Bad Days', handling:'Handling (min)', country:'Country'
+};
+const EXP_TYPES = { // for Excel cell formatting
+  perf:'pct', pickup_pct:'pct', del_pct:'pct', cancel:'pct',
+  orders:'int', bad:'int',
+  delay:'num1', max_delay:'num1', handling:'num1'
+};
+
+function expFmt(v, type){
+  if(v===null||v===undefined||v==='')return null;
+  if(type==='pct'){const n=+v;return isNaN(n)?null:+n.toFixed(4);}
+  if(type==='int'){const n=+v;return isNaN(n)?null:Math.round(n);}
+  if(type==='num1'){const n=+v;return isNaN(n)?null:+n.toFixed(1);}
+  return v;
+}
+function expExcelFmt(type){
+  if(type==='pct')return '0.0%';
+  if(type==='int')return '0';
+  if(type==='num1')return '0.0';
+  return null;
+}
+
+// ── Show toast ──
+function showToast(msg, type){
+  let t = document.getElementById('exp-toast');
+  if(!t){ t = document.createElement('div'); t.id='exp-toast'; t.className='toast'; document.body.appendChild(t); }
+  t.className = 'toast '+(type||'')+' show';
+  t.innerHTML = msg;
+  clearTimeout(window._toastTm);
+  window._toastTm = setTimeout(()=>{ t.classList.remove('show'); }, 3500);
+}
+
+// ── Menu builder ──
+window.toggleExpMenu = function(e){
+  if(e) e.stopPropagation();
+  const menu = document.getElementById('exp-menu');
+  if(!menu) return;
+  if(menu.classList.contains('open')){ menu.classList.remove('open'); return; }
+  const c = currAgg; if(!c){ showToast('⚠️ لا توجد بيانات للتصدير','err'); return; }
+  const items = [];
+  const tabName = {overview:'لمحة عامة', cities:'المدن', stores:'المتاجر',
+                   entities:'أداء الكباتن', alerts:'التنبيهات', compare:'المقارنة'}[activeTab]||'';
+  items.push({k:'tab',  l:`📄 التبويب الحالي (${tabName})`, s:'تصدير ما يظهر في الشاشة الآن'});
+  if(activeTab==='entities'){
+    const f = (typeof entFilterVals==='function')?entFilterVals():{};
+    const hasFilter = f.q||f.city||f.store||f.seg;
+    const filteredCount = (_lastFilteredEnts||[]).length;
+    items.push({k:'filtered', l:`🔍 الكباتن بعد الفلترة (${filteredCount})`,
+                s: hasFilter?'يحترم البحث والفلاتر والترتيب':'بدون فلتر — كل الكباتن'});
+    if(selEnts && selEnts.size>0){
+      items.push({k:'selected', l:`✓ المحدد فقط (${selEnts.size})`, s:'الصفوف المؤشّر عليها فقط'});
+    }
+  }
+  items.push({k:'full', l:'📚 تقرير شامل — كل التبويبات', s:'ملف بعدة أوراق (Sheets)'});
+
+  menu.innerHTML = items.map(it=>`<div class="exp-item" onclick="expReport('${it.k}')">
+    <div><div class="exp-l">${it.l}</div><div class="exp-s">${it.s}</div></div>
+  </div>`).join('');
+  menu.classList.add('open');
+};
+document.addEventListener('click', e=>{
+  const w = document.getElementById('exp-wrap');
+  if(w && !w.contains(e.target)){
+    const m = document.getElementById('exp-menu');
+    if(m) m.classList.remove('open');
+  }
+});
+
+// ── Worksheet builder with metadata header + RTL + column widths + cell formats ──
+function expBuildSheet(title, headerLabels, dataRows, colKeys, meta){
+  const now = new Date();
+  const dateStr = now.toLocaleString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const aoa = [];
+  // Metadata block
+  aoa.push([`OPS.INTEL — ${title}`]);
+  aoa.push(['Report Name / اسم التقرير', title]);
+  aoa.push(['Generated At / وقت التصدير', dateStr]);
+  if(meta && meta.source) aoa.push(['Source File / الملف المصدر', meta.source]);
+  if(meta && meta.rowsTotal!==undefined) aoa.push(['Total Rows / إجمالي الصفوف', meta.rowsTotal]);
+  if(meta && meta.filterDesc) aoa.push(['Filters / الفلاتر', meta.filterDesc]);
+  aoa.push([]); // blank row
+  const headerRowIdx = aoa.length; // 0-based index where header row starts
+  aoa.push(headerLabels);
+  dataRows.forEach(r=>aoa.push(r));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // (RTL is set at workbook level — works across SheetJS builds)
+
+  // Auto column widths (based on max content length)
+  const widths = headerLabels.map((h,ci)=>{
+    let maxLen = String(h||'').length;
+    for(let ri=0; ri<dataRows.length && ri<200; ri++){
+      const v = dataRows[ri][ci];
+      const len = v===null||v===undefined?0:String(v).length;
+      if(len>maxLen) maxLen = len;
+    }
+    return { wch: Math.min(Math.max(maxLen+2, 10), 40) };
+  });
+  ws['!cols'] = widths;
+
+  // Style title row + metadata + apply numeric formats to data cells
+  // SheetJS community build supports cell styles for read but writes plain xlsx;
+  // numeric formats via cell.z are written.
+  if(colKeys){
+    for(let ri=0; ri<dataRows.length; ri++){
+      colKeys.forEach((k,ci)=>{
+        const cellRef = XLSX.utils.encode_cell({c:ci, r:headerRowIdx+1+ri});
+        const cell = ws[cellRef];
+        if(!cell) return;
+        const t = EXP_TYPES[k];
+        const fmt = expExcelFmt(t);
+        if(fmt){ cell.z = fmt; cell.t = 'n'; }
+      });
+    }
+  }
+  // Merge title row across all columns
+  const nCols = headerLabels.length;
+  ws['!merges'] = ws['!merges']||[];
+  ws['!merges'].push({s:{r:0,c:0}, e:{r:0,c:Math.max(nCols-1,0)}});
+
+  return ws;
+}
+
+// ── Sheet builders per tab ──
+function expSheet_entities(rows){
+  const c = currAgg;
+  const keys = entityCols(c);
+  const headers = keys.map(k=>EXP_LABELS[k]||k);
+  const data = rows.map(r=>keys.map(k=>expFmt(r[k], EXP_TYPES[k])));
+  return { headers, data, keys, title:'أداء الكباتن' };
+}
+function expSheet_cities(){
+  const c = currAgg;
+  const keys = ['city','orders','perf','del_pct','pickup_pct','delay','bad'];
+  const headers = keys.map(k=>EXP_LABELS[k]||k);
+  const data = c.cities.map(ci=>keys.map(k=>expFmt(ci[k], EXP_TYPES[k])));
+  return { headers, data, keys, title:'أداء المدن' };
+}
+function expSheet_stores(){
+  const c = currAgg;
+  const keys = ['store','city','orders','perf','del_pct','pickup_pct','delay','bad'];
+  const headers = keys.map(k=>EXP_LABELS[k]||k);
+  const data = c.stores.map(s=>keys.map(k=>expFmt(s[k], EXP_TYPES[k])));
+  return { headers, data, keys, title:'أداء المتاجر' };
+}
+function expSheet_overview(){
+  const c = currAgg, p = prevAgg;
+  const rows = [];
+  rows.push(['Metric / المؤشر','Current / الحالي','Previous / السابق','Δ Change']);
+  const push=(label, cur, prev, type)=>{
+    const f = (v)=>v===null||v===undefined?'':(type==='pct'?+(+v).toFixed(4):type==='num1'?+(+v).toFixed(1):type==='int'?Math.round(+v):v);
+    const d = (cur!==null&&prev!==null&&prev!==undefined)?(+(cur-prev).toFixed(4)):null;
+    rows.push([label, f(cur), f(prev), d===null?'':d]);
+  };
+  push('إجمالي الطلبات / Total Orders', c.totOrders, p?p.totOrders:null, 'int');
+  push('عدد السجلات / Records', c.n, p?p.n:null, 'int');
+  if(c.hasPerf) push('متوسط الأداء / Avg Performance', c.avgPerf, p?p.avgPerf:null, 'pct');
+  if(c.hasDel)  push('متوسط التوصيل / Avg Delivery', c.avgDel, p?p.avgDel:null, 'pct');
+  if(c.hasPickup) push('متوسط الاستلام / Avg Pickup', c.avgPickup, p?p.avgPickup:null, 'pct');
+  if(c.hasDelay) push('متوسط التأخير / Avg Delay (min)', c.avgDelay, p?p.avgDelay:null, 'num1');
+  push('zeroDel', c.zeroDel, p?p.zeroDel:null, 'int');
+  return { headers: rows[0], data: rows.slice(1), keys: null, title:'لمحة عامة' };
+}
+function expSheet_alerts(){
+  const c = currAgg;
+  const headers = ['الأولوية / Priority','الكود / Code','العنوان / Title','الوصف / Description','عدد الصفوف / Rows'];
+  const data = (c.alerts||[]).map(a=>{
+    const pri = a.type==='r'?'🔴 حرج / Critical':a.type==='a'?'🟡 تحذير / Warning':'🔵 ملاحظة / Info';
+    return [pri, a.code||'', (a.title||'').replace(/<[^>]+>/g,''), (a.desc||'').replace(/<[^>]+>/g,''), a.rows?a.rows.length:0];
+  });
+  return { headers, data, keys:null, title:'التنبيهات' };
+}
+function expSheet_compare(){
+  const c = currAgg, p = prevAgg;
+  if(!p) return null;
+  const sm={}; p.stores.forEach(s=>sm[s.store]=s);
+  const pCapMap={}; p.raw.forEach(r=>{if(r.id)pCapMap[r.id]=r;});
+  // Captain movers
+  const rows = c.raw.filter(r=>r.id&&pCapMap[r.id]&&r.perf!==null&&pCapMap[r.id].perf!==null).map(r=>{
+    const prev = pCapMap[r.id];
+    return [
+      r.id||'', r.name||'', r.city||'', r.store||'',
+      expFmt(r.perf,'pct'), expFmt(prev.perf,'pct'), expFmt(r.perf-prev.perf,'pct'),
+      expFmt(r.orders,'int'), expFmt(prev.orders,'int'),
+      expFmt(r.del_pct,'pct'), expFmt(prev.del_pct,'pct'),
+      expFmt(r.delay,'num1'), expFmt(prev.delay,'num1')
+    ];
+  }).sort((a,b)=>(a[6]||0)-(b[6]||0));
+  const headers = ['المعرّف','الاسم','المدينة','المتجر',
+    'الأداء الحالي','الأداء السابق','Δ الأداء',
+    'الطلبات الحالية','الطلبات السابقة',
+    'التوصيل الحالي','التوصيل السابق',
+    'التأخير الحالي','التأخير السابق'];
+  const keys = ['id','name','city','store','perf','perf','perf','orders','orders','del_pct','del_pct','delay','delay'];
+  return { headers, data:rows, keys, title:'المقارنة — الكباتن' };
+}
+
+// ── Filter description (Arabic) ──
+function expFilterDesc(){
+  if(activeTab!=='entities') return '';
+  const f = entFilterVals();
+  const parts = [];
+  if(f.q) parts.push(`بحث: "${f.q}"`);
+  if(f.city) parts.push(`المدينة: ${f.city}`);
+  if(f.store) parts.push(`المتجر: ${f.store}`);
+  if(f.seg){
+    const segL = {critical:'خطر <33%',poor:'ضعيف 33-50%',avg:'متوسط 50-70%',good:'جيد 70-85%',elite:'نخبة >85%'}[f.seg];
+    parts.push(`الشريحة: ${segL}`);
+  }
+  if(f.sort) parts.push(`الترتيب: ${f.sort}`);
+  return parts.join(' | ');
+}
+
+// ── Source filename ──
+function expSourceName(){
+  const el = document.getElementById('tx-curr');
+  return el ? el.textContent : '';
+}
+
+// ── Build workbook and download ──
+function expDownload(wb, baseName){
+  const stamp = new Date().toISOString().replace(/[:T]/g,'-').slice(0,16);
+  const fname = `${baseName}_${stamp}.xlsx`;
+  XLSX.writeFile(wb, fname, { bookType:'xlsx', compression:true });
+  return fname;
+}
+
+// ── Main dispatcher ──
+window.expReport = function(kind){
+  const menu = document.getElementById('exp-menu');
+  if(menu) menu.classList.remove('open');
+  const btn = document.getElementById('btn-export');
+  if(btn) btn.disabled = true;
+  showToast('⏳ جاري إنشاء الملف...', '');
+
+  // Defer to allow toast to paint, and to keep UI responsive on large data
+  setTimeout(()=>{
+    try {
+      const c = currAgg;
+      if(!c) throw new Error('لا توجد بيانات');
+      const meta = { source: expSourceName(), filterDesc: expFilterDesc() };
+      const wb = XLSX.utils.book_new();
+      wb.Workbook = { Views: [{ RTL: true }] };
+      let baseName = 'ops_intel_export';
+      let sheetCount = 0;
+
+      const addSheet = (built, sheetName)=>{
+        if(!built || !built.data || !built.data.length){
+          // Still add an empty sheet with headers so the file isn't blank
+          if(!built) return;
+        }
+        const m = { ...meta, rowsTotal: (built.data||[]).length };
+        const ws = expBuildSheet(built.title, built.headers, built.data||[], built.keys, m);
+        const name = (sheetName||built.title).substring(0,31).replace(/[\\\/\?\*\[\]:]/g,'_');
+        XLSX.utils.book_append_sheet(wb, ws, name);
+        sheetCount++;
+      };
+
+      if(kind==='tab'){
+        if(activeTab==='entities'){
+          // Export all entity rows (no filter) when "current tab" pressed on entities
+          addSheet(expSheet_entities(c.raw), 'الكباتن');
+          baseName = 'captains_all';
+        } else if(activeTab==='cities'){
+          addSheet(expSheet_cities(), 'المدن');
+          baseName = 'cities';
+        } else if(activeTab==='stores'){
+          addSheet(expSheet_stores(), 'المتاجر');
+          baseName = 'stores';
+        } else if(activeTab==='overview'){
+          addSheet(expSheet_overview(), 'لمحة عامة');
+          baseName = 'overview';
+        } else if(activeTab==='alerts'){
+          addSheet(expSheet_alerts(), 'التنبيهات');
+          baseName = 'alerts';
+        } else if(activeTab==='compare'){
+          const s = expSheet_compare();
+          if(!s) throw new Error('لا توجد بيانات مقارنة — ارفع الفترة السابقة');
+          addSheet(s, 'المقارنة');
+          baseName = 'comparison';
+        }
+      } else if(kind==='filtered'){
+        const rows = (typeof computeFilteredEnts==='function')?computeFilteredEnts():c.raw;
+        addSheet(expSheet_entities(rows), 'الكباتن (مفلتر)');
+        baseName = 'captains_filtered';
+      } else if(kind==='selected'){
+        const rows = c.raw.filter(r=>selEnts.has(r._ix));
+        if(!rows.length) throw new Error('لم يتم تحديد أي صف');
+        addSheet(expSheet_entities(rows), 'الكباتن (محدد)');
+        baseName = 'captains_selected';
+      } else if(kind==='full'){
+        addSheet(expSheet_overview(), 'لمحة عامة');
+        addSheet(expSheet_cities(), 'المدن');
+        addSheet(expSheet_stores(), 'المتاجر');
+        addSheet(expSheet_entities(c.raw), 'الكباتن');
+        addSheet(expSheet_alerts(), 'التنبيهات');
+        const cmp = expSheet_compare(); if(cmp) addSheet(cmp, 'المقارنة');
+        baseName = 'ops_intel_full_report';
+      }
+
+      if(sheetCount===0) throw new Error('لا توجد أوراق للتصدير');
+
+      const fname = expDownload(wb, baseName);
+      showToast(`✅ تم التصدير بنجاح<br><span style="font-size:10px;color:var(--text3)">${fname} — ${sheetCount} ورقة</span>`, 'ok');
+    } catch(err){
+      console.error(err);
+      showToast(`❌ فشل التصدير: ${err.message||err}`, 'err');
+    } finally {
+      if(btn) btn.disabled = false;
+    }
+  }, 60);
+};
+
+
 function renderWelcome(){
+  const _ew1=document.getElementById('exp-wrap');if(_ew1)_ew1.style.display='none';
   document.getElementById('main').innerHTML=`
   <label class="drop-zone" id="dz">
     <input type="file" id="dz-file" accept=".xlsx,.xls,.csv">
