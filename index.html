@@ -142,26 +142,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
 .fi:focus{outline:none;border-color:var(--green)}
 .fi.inp{flex:1;min-width:180px}
 .scroll-x{overflow-x:auto}
+.export-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.btn-exp{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;font-family:var(--font-mono);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-exp:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.btn-exp.blue:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
 .empty{text-align:center;padding:40px;color:var(--text3);font-size:12px;line-height:2}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 32px;width:380px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-box h3{font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.modal-box p{font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.modal-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:6px;font-size:13px;font-family:var(--font-mono);margin-bottom:14px;outline:none}
+.modal-input:focus{border-color:var(--green)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-btn{padding:7px 18px;border-radius:6px;font-family:var(--font-head);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--green);color:#fff}
+.modal-btn.primary:hover{background:var(--green2)}
+.modal-btn.cancel{background:var(--bg4);color:var(--text2);border:1px solid var(--border2)}
+.modal-btn.cancel:hover{color:var(--text)}
+.rec-card{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;transition:background .15s}
+.rec-card:hover{background:var(--bg4)}
+.rec-reason{font-size:10px;color:var(--text3);margin-top:3px}
+.rec-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-family:var(--font-head);font-weight:600;white-space:nowrap;flex-shrink:0}
 .g-txt{color:var(--green)}.r-txt{color:var(--red)}.a-txt{color:var(--amber)}.b-txt{color:var(--blue)}
 .compare-badge{font-size:10px;padding:2px 7px;border-radius:3px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(43,127,212,.25);font-family:var(--font-head);font-weight:600}
 .info-chip{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.exp-wrap{position:relative;display:flex}
-.btn-export{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--green),#0a9e66);color:#06281b;border:none;padding:7px 13px;border-radius:7px;font-size:11px;font-weight:700;font-family:var(--font-head);cursor:pointer;white-space:nowrap;transition:.15s}
-.btn-export:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn-export:disabled{opacity:.6;cursor:wait;transform:none}
-.exp-menu{position:absolute;top:calc(100% + 7px);inset-inline-start:0;min-width:235px;max-width:85vw;background:var(--bg2);border:1px solid var(--border2);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:5px;display:none;z-index:99}
-.exp-menu.open{display:block}
-.exp-item{display:flex;gap:9px;align-items:center;padding:8px 9px;border-radius:6px;cursor:pointer;font-size:11px}
-.exp-item:hover{background:var(--bg3)}
-.exp-l{font-weight:600;color:var(--text)}
-.exp-s{font-size:9px;color:var(--text3);margin-top:1px}
-.sel-td{width:26px;text-align:center}
-.sel-td input,#esel-all{accent-color:var(--green);cursor:pointer;width:13px;height:13px;vertical-align:middle}
-.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,12px);background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:9px;font-size:12px;font-family:var(--font-mono);box-shadow:0 8px 28px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.25s;z-index:999;text-align:center;max-width:90vw;line-height:1.7}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.ok{border-color:rgba(0,196,122,.5)}
-.toast.err{border-color:rgba(232,51,74,.5)}
 @media(max-width:600px){.two,.three{grid-template-columns:1fr}.topbar{flex-wrap:wrap}}
 </style>
 </head>
@@ -177,10 +181,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
       <input type="file" id="f-prev" accept=".xlsx,.xls,.csv">
       <span id="ic-prev">📅</span><span id="tx-prev">مقارنة بالفترة السابقة</span>
     </label>
-    <div class="exp-wrap" id="exp-wrap" style="display:none">
-      <button class="btn-export" id="btn-export" onclick="toggleExpMenu(event)">📥 تصدير إلى Excel <span style="font-size:9px">▾</span></button>
-      <div class="exp-menu" id="exp-menu"></div>
-    </div>
   </div>
   <div class="topbar-right">
     <div class="status-wrap"><div class="dot" id="sdot"></div><span style="font-size:10px;color:var(--text2)" id="slbl">بانتظار ملف</span></div>
@@ -195,10 +195,151 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-si
 //  STATE
 // ══════════════════════════════════════════════
 let currRaw=null,prevRaw=null,currMap=null,prevMap=null;
-let selEnts=new Set();let _lastFilteredEnts=[];
 let currAgg=null,prevAgg=null;
 let activeTab='overview';
 let isDark=true;
+
+// ══════════════════════════════════════════════
+//  TRAINING SYSTEM — persistent via localStorage
+// ══════════════════════════════════════════════
+const TRAIN_KEY='ops_training_data_v1';
+function loadTraining(){
+  try{
+    const raw=localStorage.getItem(TRAIN_KEY);
+    if(!raw)return{active:[],completed:[]};
+    const d=JSON.parse(raw);
+    return{active:d.active||[],completed:d.completed||[]};
+  }catch(e){return{active:[],completed:[]};}
+}
+function saveTraining(data){
+  try{localStorage.setItem(TRAIN_KEY,JSON.stringify(data));}catch(e){console.error('training storage failed',e);}
+}
+let trainingData=loadTraining();
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+
+function trainingBadge(t){
+  if(!t.history||t.history.length<2)return{emoji:'🟡',label:'لا يوجد تغيير',cls:'x',diff:0};
+  const first=t.history[0];
+  const last=t.history[t.history.length-1];
+  if(first.perf===null||first.perf===undefined||last.perf===null||last.perf===undefined)
+    return{emoji:'🟡',label:'لا بيانات كافية',cls:'x',diff:0};
+  const diff=last.perf-first.perf;
+  if(diff>=0.15)return{emoji:'✅',label:'تحسن بشكل كبير',cls:'g',diff};
+  if(diff>=0.05)return{emoji:'🟢',label:'تحسن',cls:'g',diff};
+  if(diff>-0.05)return{emoji:'🟡',label:'لا يوجد تغيير',cls:'x',diff};
+  if(diff>-0.15)return{emoji:'🟠',label:'تراجع',cls:'a',diff};
+  return{emoji:'🔴',label:'تراجع بشكل كبير',cls:'r',diff};
+}
+
+function trainingSync(rows){
+  if(!rows||!rows.length||!trainingData.active.length)return;
+  const today=todayStr();
+  let changed=false;
+  trainingData.active.forEach(t=>{
+    const match=rows.find(r=>String(r.id)===String(t.id));
+    if(match){
+      const last=t.history[t.history.length-1];
+      if(!last||last.date!==today||last.perf!==match.perf){
+        t.history.push({date:today,perf:match.perf,orders:match.orders,pickup_pct:match.pickup_pct,del_pct:match.del_pct,delay:match.delay,bad:match.bad,cancel:match.cancel});
+        changed=true;
+      }
+    }
+  });
+  if(changed)saveTraining(trainingData);
+}
+
+window.addToTraining=function(id,prefillReason){
+  if(!currAgg){showModal('تنبيه','يجب رفع ملف البيانات أولاً قبل إضافة كابتن للتدريب.','',null);return;}
+  const row=currAgg.raw.find(r=>String(r.id)===String(id));
+  if(!row){showModal('تنبيه','لم يتم العثور على بيانات هذا الكابتن في الملف الحالي.','',null);return;}
+  showModal(
+    'إضافة إلى قائمة التدريب',
+    'الكابتن: '+(row.name||id)+' | الأداء الحالي: '+pct(row.perf),
+    prefillReason||'أداء منخفض',
+    function(reason){
+      if(!reason)return;
+      const today=todayStr();
+  const histEntry={date:today,perf:row.perf,orders:row.orders,pickup_pct:row.pickup_pct,del_pct:row.del_pct,delay:row.delay,bad:row.bad,cancel:row.cancel};
+  const existingActive=trainingData.active.find(t=>String(t.id)===String(id));
+  const existingCompletedIdx=trainingData.completed.findIndex(t=>String(t.id)===String(id));
+
+  if(existingActive){
+    existingActive.trainingCount=(existingActive.trainingCount||1)+1;
+    existingActive.history.push(histEntry);
+    existingActive.reason=reason||existingActive.reason;
+    existingActive.notes.push({date:today,text:'أعيدت إضافته للتدريب — '+reason});
+  } else if(existingCompletedIdx>-1){
+    const rec=trainingData.completed[existingCompletedIdx];
+    trainingData.completed.splice(existingCompletedIdx,1);
+    rec.trainingCount=(rec.trainingCount||1)+1;
+    rec.history.push(histEntry);
+    rec.reason=reason||rec.reason;
+    rec.status='active';
+    delete rec.completedDate;
+    rec.notes.push({date:today,text:'أُعيد إلى التدريب بعد الإكمال — '+reason});
+    trainingData.active.push(rec);
+  } else {
+    trainingData.active.push({
+      id:row.id,name:row.name,store:row.store,city:row.city,
+      dateAdded:today,reason:reason,perfAtAdd:row.perf,ordersAtAdd:row.orders,
+      trainingCount:1,notes:[{date:today,text:'أُضيف لأول مرة — '+reason}],
+      history:[histEntry],status:'active'
+    });
+  }
+      saveTraining(trainingData);
+      renderDash();
+    }
+  );
+};
+
+window.endTraining=function(id){
+  const idx=trainingData.active.findIndex(t=>String(t.id)===String(id));
+  if(idx===-1)return;
+  const rec=trainingData.active[idx];
+  rec.status='completed';
+  rec.completedDate=todayStr();
+  trainingData.active.splice(idx,1);
+  trainingData.completed.push(rec);
+  saveTraining(trainingData);
+  renderDash();
+};
+
+window.reactivateTraining=function(id){
+  const idx=trainingData.completed.findIndex(t=>String(t.id)===String(id));
+  if(idx===-1)return;
+  const rec=trainingData.completed[idx];
+  rec.status='active';
+  delete rec.completedDate;
+  trainingData.completed.splice(idx,1);
+  trainingData.active.push(rec);
+  saveTraining(trainingData);
+  renderDash();
+};
+
+window.deleteTrainingPermanent=function(id,listType){
+  if(!confirm('هل أنت متأكد من الحذف النهائي؟ لا يمكن التراجع عن هذا الإجراء.'))return;
+  if(listType==='active')trainingData.active=trainingData.active.filter(t=>String(t.id)!==String(id));
+  else trainingData.completed=trainingData.completed.filter(t=>String(t.id)!==String(id));
+  saveTraining(trainingData);
+  renderDash();
+};
+
+window.addTrainingNote=function(id){
+  const rec=trainingData.active.find(t=>String(t.id)===String(id))||trainingData.completed.find(t=>String(t.id)===String(id));
+  if(!rec)return;
+  showModal(
+    'إضافة ملاحظة',
+    'الكابتن: '+(rec.name||id),
+    '',
+    function(text){
+      if(!text)return;
+      rec.notes.push({date:todayStr(),text});
+      saveTraining(trainingData);
+      renderDash();
+    }
+  );
+};
 
 // ══════════════════════════════════════════════
 //  COLUMN DETECTION ENGINE
@@ -460,7 +601,6 @@ function dH(curr,prev,better){
 //  RENDER MAPPING UI
 // ══════════════════════════════════════════════
 function renderMapUI(fileInfo, which){
-  const _ew0=document.getElementById('exp-wrap');if(_ew0)_ew0.style.display='none';
   const map=detectMap(fileInfo.headers);
   const optionsHtml='<option value="">— لا يوجد —</option>'+fileInfo.headers.map(h=>`<option value="${h}">${h}</option>`).join('');
   const autoCount=FIELDS.filter(f=>map[f.key]&&map[f.key].auto).length;
@@ -522,8 +662,8 @@ window.confirmMap=function(which){
   const {fileInfo}=window._pendingFile;
   const rows=extractRows(fileInfo.raw,map);
   if(which==='curr'){
-    selEnts.clear();
     currRaw=fileInfo.raw;currMap=map;currAgg=buildAgg(rows,map);
+    trainingSync(currAgg.raw);
     document.getElementById('ic-curr').textContent='✅';
     document.getElementById('tx-curr').textContent=fileInfo.name.substring(0,20);
     document.getElementById('lbl-curr').classList.add('loaded');
@@ -550,21 +690,34 @@ function renderDash(){
     {k:'cities',l:'المدن'},
     {k:'stores',l:'المتاجر'},
     {k:'entities',l:'أداء الكباتن'},
+    {k:'training',l:'🎓 التدريب'+(trainingData.active.length?` (${trainingData.active.length})`:'')},
     {k:'alerts',l:'🚨 التنبيهات'+(c.alerts.filter(a=>a.type==='r').length?` (${c.alerts.filter(a=>a.type==='r').length})`:'')},
     {k:'compare',l:'المقارنة'+(p?' <span class="compare-badge">ON</span>':'')}
   ];
-  const tabBar=`<div class="tab-bar">${tabs.map(t=>`<button class="tab${t.k===activeTab?' active':''}" onclick="sw('${t.k}')">${t.l}</button>`).join('')}</div>`;
+  const tabBar='<div class="tab-bar">'
+    +tabs.map(t=>'<button class="tab'+(t.k===activeTab?' active':'')+'" data-sw="'+t.k+'">'+t.l+'</button>').join('')
+    +'</div>'
+    +'<div class="export-bar">'
+    +'<span style="font-size:10px;color:var(--text3);letter-spacing:.05em">تصدير:</span>'
+    +'<button class="btn-exp" data-exp="captains">📥 الكباتن CSV</button>'
+    +'<button class="btn-exp" data-exp="cities">📥 المدن CSV</button>'
+    +'<button class="btn-exp" data-exp="stores">📥 المتاجر CSV</button>'
+    +'<button class="btn-exp blue" data-exp="fraud">🚨 قائمة التلاعب CSV</button>'
+    +'</div>';
   let body='';
 
   if(activeTab==='overview') body=renderOverview(c,p);
   else if(activeTab==='cities') body=renderCities(c,p);
   else if(activeTab==='stores') body=renderStores(c,p);
   else if(activeTab==='entities') body=renderEntities(c);
+  else if(activeTab==='training') body=renderTraining(c);
   else if(activeTab==='alerts') body=renderAlerts(c);
   else if(activeTab==='compare') body=renderCompare(c,p);
 
   document.getElementById('main').innerHTML=tabBar+body;
-  const _ew=document.getElementById('exp-wrap');if(_ew)_ew.style.display='flex';
+  // ── Attach ALL listeners after innerHTML set ──
+  // all data-* handled by global delegation
+  // training action buttons handled by global delegation
   if(activeTab==='entities')filterEnts();
 }
 
@@ -594,7 +747,7 @@ function renderOverview(c,p){
       ${[{k:'critical',c:'#e8334a'},{k:'poor',c:'#d4891a'},{k:'avg',c:'#555b6a'},{k:'good',c:'#2b7fd4'},{k:'elite',c:'#00c47a'}].map(s=>{const w=(c.segs[s.k]/total*100).toFixed(1);return`<div class="seg-p" style="flex:${w};background:${s.c}22;border:1px solid ${s.c}44;color:${s.c}">${w>4?c.segs[s.k]:''}</div>`;}).join('')}
     </div>
     <div class="seg-leg">
-      ${[{k:'critical',c:'#e8334a',l:'خطورة <33%'},{k:'poor',c:'#d4891a',l:'ضعيف 33-50%'},{k:'avg',c:'#555b6a',l:'متوسط 50-70%'},{k:'good',c:'#2b7fd4',l:'جيد 70-85%'},{k:'elite',c:'#00c47a',l:'نخبة >85%'}].map(s=>`<div class="seg-i"><div class="seg-d" style="background:${s.c}"></div>${s.l}: <strong style="color:var(--text)">${c.segs[s.k]}</strong></div>`).join('')}
+      ${[{k:'critical',c:'#e8334a',l:'خطورة <33%'},{k:'poor',c:'#d4891a',l:'يحتاج تدريب 33-50%'},{k:'avg',c:'#555b6a',l:'متوسط 50-70%'},{k:'good',c:'#2b7fd4',l:'جيد 70-85%'},{k:'elite',c:'#00c47a',l:'نخبة >85%'}].map(s=>`<div class="seg-i"><div class="seg-d" style="background:${s.c}"></div>${s.l}: <strong style="color:var(--text)">${c.segs[s.k]}</strong></div>`).join('')}
     </div></div></div>`;
   }
 
@@ -713,7 +866,7 @@ function renderEntities(c){
     ${c.hasPerf?`<select class="fi" id="eseg" onchange="filterEnts()">
       <option value="">كل الشرائح</option>
       <option value="critical">خطورة &lt;33%</option>
-      <option value="poor">ضعيف 33-50%</option>
+      <option value="poor">يحتاج تدريب 33-50%</option>
       <option value="avg">متوسط 50-70%</option>
       <option value="good">جيد 70-85%</option>
       <option value="elite">نخبة &gt;85%</option>
@@ -727,7 +880,7 @@ function renderEntities(c){
   </div>
   <div class="panel"><div class="ph"><span class="pt" id="ect">تحميل...</span></div>
   <div class="scroll-x"><table class="tbl"><thead><tr>
-    <th style="width:26px"><input type="checkbox" id="esel-all" onchange="toggleSelAll(this)" title="تحديد كل النتائج المفلترة"></th>${cols.map(col=>`<th>${col.l}</th>`).join('')}<th>الحالة</th>
+    ${cols.map(col=>`<th>${col.l}</th>`).join('')}<th>الحالة</th><th>إجراء</th>
   </tr></thead><tbody id="etbody"></tbody></table></div></div>`;
 }
 
@@ -742,25 +895,33 @@ window.onECityChange=function(){
   filterEnts();
 };
 
-// ── Entities filter pipeline (shared by table + export) ──
-function entFilterVals(){
-  return{
-    q:(document.getElementById('eq')||{}).value||'',
-    city:(document.getElementById('ecy')||{}).value||'',
-    store:(document.getElementById('est')||{}).value||'',
-    seg:(document.getElementById('eseg')||{}).value||'',
-    sort:(document.getElementById('esort')||{}).value||''
-  };
-}
-function sortEnts(rows,sort){
+window.filterEnts=function(){
+  if(!currAgg)return;
+  const c=currAgg;
+  const q=(document.getElementById('eq')||{}).value||'';
+  const city=(document.getElementById('ecy')||{}).value||'';
+  const store=(document.getElementById('est')||{}).value||'';
+  const seg=(document.getElementById('eseg')||{}).value||'';
+  const sort=(document.getElementById('esort')||{}).value||'';
+  let rows=[...c.raw];
+  if(q)rows=rows.filter(r=>String(r.id||'').includes(q)||(r.name||'').toLowerCase().includes(q.toLowerCase())||(r.store||'').toLowerCase().includes(q.toLowerCase()));
+  if(city)rows=rows.filter(r=>r.city===city);
+  if(store)rows=rows.filter(r=>r.store===store);
+  if(seg==='critical')rows=rows.filter(r=>r.perf!==null&&r.perf<0.33);
+  else if(seg==='poor')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.33&&r.perf<0.5);
+  else if(seg==='avg')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.5&&r.perf<0.7);
+  else if(seg==='good')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.7&&r.perf<0.85);
+  else if(seg==='elite')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.85);
   if(sort==='perf_asc')rows.sort((a,b)=>(a.perf||0)-(b.perf||0));
   else if(sort==='perf_desc')rows.sort((a,b)=>(b.perf||0)-(a.perf||0));
   else if(sort==='orders')rows.sort((a,b)=>(b.orders||0)-(a.orders||0));
   else if(sort==='delay')rows.sort((a,b)=>(b.delay||0)-(a.delay||0));
   else if(sort==='bad')rows.sort((a,b)=>(b.bad||0)-(a.bad||0));
-  return rows;
-}
-function entityCols(c){
+  const shown=rows.slice(0,100);
+  const cnt=document.getElementById('ect');
+  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} سجل`;
+  const tbody=document.getElementById('etbody');
+  if(!tbody)return;
   const cols=[];
   if(c.has('id'))cols.push('id');if(c.has('name'))cols.push('name');
   if(c.has('city'))cols.push('city');if(c.has('store'))cols.push('store');
@@ -769,37 +930,7 @@ function entityCols(c){
   if(c.hasPickup)cols.push('pickup_pct');if(c.hasDelay)cols.push('delay');
   if(c.hasBad)cols.push('bad');if(c.hasCancel)cols.push('cancel');
   if(c.hasHandling)cols.push('handling');
-  return cols;
-}
-function computeFilteredEnts(){
-  const c=currAgg;if(!c)return[];
-  if(c.raw.length&&c.raw[0]._ix===undefined)c.raw.forEach((r,i)=>r._ix=i);
-  const f=entFilterVals();
-  let rows=[...c.raw];
-  if(f.q)rows=rows.filter(r=>String(r.id||'').includes(f.q)||(r.name||'').toLowerCase().includes(f.q.toLowerCase())||(r.store||'').toLowerCase().includes(f.q.toLowerCase()));
-  if(f.city)rows=rows.filter(r=>r.city===f.city);
-  if(f.store)rows=rows.filter(r=>r.store===f.store);
-  if(f.seg==='critical')rows=rows.filter(r=>r.perf!==null&&r.perf<0.33);
-  else if(f.seg==='poor')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.33&&r.perf<0.5);
-  else if(f.seg==='avg')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.5&&r.perf<0.7);
-  else if(f.seg==='good')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.7&&r.perf<0.85);
-  else if(f.seg==='elite')rows=rows.filter(r=>r.perf!==null&&r.perf>=0.85);
-  sortEnts(rows,f.sort);
-  return rows;
-}
-window.filterEnts=function(){
-  if(!currAgg)return;
-  const c=currAgg;
-  const rows=computeFilteredEnts();
-  _lastFilteredEnts=rows;
-  const shown=rows.slice(0,100);
-  const cnt=document.getElementById('ect');
-  if(cnt)cnt.textContent=`عرض ${shown.length} من ${rows.length} سجل`+(selEnts.size?` — ✓ محدد: ${selEnts.size}`:'');
-  const tbody=document.getElementById('etbody');
-  if(!tbody)return;
-  const cols=entityCols(c);
   tbody.innerHTML=shown.map(r=>`<tr>
-    <td class="sel-td"><input type="checkbox" class="esel" data-ix="${r._ix}" ${selEnts.has(r._ix)?'checked':''} onchange="toggleSel(this)"></td>
     ${cols.map(col=>{
       const v=r[col];
       // ── Percentages only for these fields ──
@@ -823,33 +954,13 @@ window.filterEnts=function(){
       // ── Default ──
       return`<td style="color:var(--text)">${(v!==null&&v!==undefined&&v!=='')?v:'—'}</td>`;
     }).join('')}
-    <td>${(r.perf!==null&&r.perf!==undefined)?(r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
+    <td>${(r.perf!==null&&r.perf!==undefined)?(r.perf<0.33?'<span class="pill r">حظر</span>':r.perf<0.5?'<span class="pill a">يحتاج تدريب</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
+    <td>${(()=>{const inActive=trainingData.active.some(t=>String(t.id)===String(r.id));const inCompleted=trainingData.completed.some(t=>String(t.id)===String(r.id));
+      if(inActive)return'<span class="pill b">🎓 في التدريب</span>';
+      if(inCompleted)return'<span class="pill g">✅ أكمل التدريب</span>';
+      return`<button class="btn-exp" style="padding:4px 10px;font-size:10px" data-train-add="${r.id}">➕ إضافة للتدريب</button>`;})()}</td>
   </tr>`).join('');
-  const all=document.getElementById('esel-all');
-  if(all){
-    const selInFilter=rows.reduce((s,r)=>s+(selEnts.has(r._ix)?1:0),0);
-    all.checked=rows.length>0&&selInFilter===rows.length;
-    all.indeterminate=selInFilter>0&&selInFilter<rows.length;
-  }
-};
-window.toggleSel=function(cb){
-  const ix=+cb.dataset.ix;
-  if(cb.checked)selEnts.add(ix);else selEnts.delete(ix);
-  const rows=_lastFilteredEnts;
-  const cnt=document.getElementById('ect');
-  if(cnt)cnt.textContent=`عرض ${Math.min(rows.length,100)} من ${rows.length} سجل`+(selEnts.size?` — ✓ محدد: ${selEnts.size}`:'');
-  const all=document.getElementById('esel-all');
-  if(all){
-    const selInFilter=rows.reduce((s,r)=>s+(selEnts.has(r._ix)?1:0),0);
-    all.checked=rows.length>0&&selInFilter===rows.length;
-    all.indeterminate=selInFilter>0&&selInFilter<rows.length;
-  }
-};
-window.toggleSelAll=function(cb){
-  const rows=_lastFilteredEnts;
-  if(cb.checked)rows.forEach(r=>selEnts.add(r._ix));
-  else rows.forEach(r=>selEnts.delete(r._ix));
-  filterEnts();
+  // data-train-add handled by global delegation
 };
 
 function capTable(rows,extraCols){
@@ -858,8 +969,8 @@ function capTable(rows,extraCols){
   const cols=[...base,...(extraCols||[])].filter((c,i,a)=>a.indexOf(c)===i);
   const labels={id:'المعرّف',name:'الاسم',city:'المدينة',store:'المتجر',orders:'طلبات',
     perf:'الأداء',pickup_pct:'استلام',del_pct:'توصيل',delay:'تأخير',bad:'أيام سيئة',handling:'وقت العميل',max_delay:'أقصى تأخير'};
-  return`<div class="scroll-x" style="max-height:260px;overflow-y:auto"><table class="tbl"><thead><tr>
-    ${cols.map(c=>`<th>${labels[c]||c}</th>`).join('')}<th>الحالة</th>
+  return`<div class="scroll-x" style="max-height:280px;overflow-y:auto"><table class="tbl"><thead><tr>
+    ${cols.map(c=>`<th>${labels[c]||c}</th>`).join('')}<th>الحالة</th><th>إجراء</th>
   </tr></thead><tbody>
   ${rows.slice(0,50).map(r=>`<tr>
     ${cols.map(col=>{
@@ -873,12 +984,213 @@ function capTable(rows,extraCols){
       if(col==='name')return`<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v||''}">${v||'—'}</td>`;
       return`<td style="color:var(--text)">${v!==null&&v!==undefined&&v!==''?v:'—'}</td>`;
     }).join('')}
-    <td>${r.perf!==null&&r.perf!==undefined?(r.perf<0.33?'<span class="pill r">خطر</span>':r.perf<0.5?'<span class="pill a">ضعيف</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
+    <td>${r.perf!==null&&r.perf!==undefined?(r.perf<0.33?'<span class="pill r">حظر</span>':r.perf<0.5?'<span class="pill a">يحتاج تدريب</span>':r.perf>=0.85?'<span class="pill g">نخبة</span>':'<span class="pill x">عادي</span>'):'<span class="pill x">—</span>'}</td>
+    <td>${(()=>{const inActive=trainingData.active.some(t=>String(t.id)===String(r.id));const inCompleted=trainingData.completed.some(t=>String(t.id)===String(r.id));
+      if(inActive)return'<span class="pill b">🎓 في التدريب</span>';
+      if(inCompleted)return'<span class="pill g">✅ أكمل</span>';
+      return`<button class="btn-exp" style="padding:3px 8px;font-size:10px" data-train-add="${r.id}">➕ إضافة للتدريب</button>`;})()}</td>
   </tr>`).join('')}
   </tbody></table></div>`;
 }
 
-function computeSignals(c){
+
+// ══════════════════════════════════════════════
+//  SMART TRAINING RECOMMENDATIONS ENGINE
+// ══════════════════════════════════════════════
+function getTrainingRecommendations(rows){
+  if(!rows||!rows.length)return[];
+  const alreadyInTraining=new Set([
+    ...trainingData.active.map(t=>String(t.id)),
+    ...trainingData.completed.map(t=>String(t.id))
+  ]);
+  const avgDelay=rows.filter(r=>r.delay>0).reduce((s,r,_,a)=>s+r.delay/a.length,0)||0;
+  const avgOrders=rows.reduce((s,r)=>s+r.orders,0)/rows.length||1;
+
+  return rows.filter(r=>{
+    if(alreadyInTraining.has(String(r.id)))return false;
+    if(r.perf===null||r.perf===undefined)return false;
+    if(r.perf<0.1)return false;   // too bad → suspension not training
+    if(r.perf>=0.7)return false;  // good enough
+    if(r.orders<3)return false;   // not enough data
+    return true;
+  }).map(r=>{
+    let score=0;const reasons=[];
+    // 1. Performance gap from target 70%
+    const gap=0.7-r.perf;
+    score+=gap*40;
+    if(r.perf>=0.4&&r.perf<0.65){score+=15;reasons.push('أداء قابل للتحسين ('+pct(r.perf)+')');}
+    // 2. Pickup good but delivery bad = training on last-mile helps
+    if(r.pickup_pct!==null&&r.del_pct!==null&&r.pickup_pct>=0.6&&r.del_pct<0.4){
+      score+=20;reasons.push('يستلم جيداً لكن توصيله ضعيف');
+    }
+    // 3. Bad days pattern — habitual not extreme
+    if(r.bad!==null&&r.bad>=1&&r.bad<5){score+=10;reasons.push('أيام سيئة متكررة ('+Math.round(r.bad)+' يوم)');}
+    // 4. High delay vs average
+    if(r.delay!==null&&r.delay>avgDelay*1.5){score+=12;reasons.push('تأخير أعلى من المتوسط');}
+    // 5. High volume = more impact
+    if(r.orders>avgOrders){score+=8;reasons.push('حجم طلبات مرتفع — التأثير أكبر');}
+    // 6. Handling time issue
+    if(r.handling!==null&&r.handling>4){score+=8;reasons.push('وقت تعامل مع العميل مرتفع');}
+    return{...r,score:Math.round(score),reasons};
+  }).filter(r=>r.score>=15)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,15);
+}
+function sparkline(history,w,h){
+  if(!history||history.length<2)return'<span style="font-size:10px;color:var(--text3)">—</span>';
+  const vals=history.map(p=>p.perf!==null&&p.perf!==undefined?p.perf:null).filter(v=>v!==null);
+  if(vals.length<2)return'<span style="font-size:10px;color:var(--text3)">—</span>';
+  const min=Math.min(...vals);const max=Math.max(...vals);
+  const range=Math.max(max-min,0.05);
+  const px=(v,i)=>{
+    const x=Math.round((i/(vals.length-1))*w);
+    const y=Math.round(h-((v-min)/range)*(h-4)-2);
+    return x+','+y;
+  };
+  const pts=vals.map((v,i)=>px(v,i)).join(' ');
+  const lastUp=vals[vals.length-1]>=vals[0];
+  const color=lastUp?'var(--green)':'var(--red)';
+  return'<svg width="'+w+'" height="'+h+'" style="overflow:visible;vertical-align:middle">'
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round"/>'
+    +'<circle cx="'+px(vals[vals.length-1],vals.length-1).split(',')[0]+'" cy="'+px(vals[vals.length-1],vals.length-1).split(',')[1]+'" r="2.5" fill="'+color+'"/>'
+    +'</svg>';
+}
+
+function renderTraining(c){
+  const active=trainingData.active;
+  const completed=trainingData.completed;
+  const total=active.length+completed.length;
+
+  const withBadge=active.map(t=>Object.assign({},t,{badge:trainingBadge(t)}));
+  const completedWithBadge=completed.map(t=>Object.assign({},t,{badge:trainingBadge(t)}));
+
+  const improved=withBadge.filter(t=>t.badge.diff>0.05).length;
+  const noChange=withBadge.filter(t=>t.badge.diff<=0.05&&t.badge.diff>=-0.05).length;
+  const regressed=withBadge.filter(t=>t.badge.diff<-0.05).length;
+  const avgImprove=withBadge.length?withBadge.reduce((s,t)=>s+t.badge.diff,0)/withBadge.length:0;
+  const successRate=completed.length?completedWithBadge.filter(t=>t.badge.diff>0.05).length/completed.length:0;
+
+  const topImproved=[...withBadge].sort((a,b)=>b.badge.diff-a.badge.diff).slice(0,10).filter(t=>t.history.length>=2);
+  const worstFollow=[...withBadge].sort((a,b)=>a.badge.diff-b.badge.diff).slice(0,10);
+
+  const reasonFreq={};
+  [...active,...completed].forEach(t=>{const r=t.reason||'غير محدد';reasonFreq[r]=(reasonFreq[r]||0)+1;});
+  const topReasons=Object.entries(reasonFreq).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  const now=new Date();
+  const staleList=withBadge.filter(t=>{
+    const added=new Date(t.dateAdded);
+    const days=(now-added)/(1000*60*60*24);
+    return days>=14&&t.badge.diff<=0.05;
+  });
+
+  const rowHtml=(t,isActive)=>{
+    const b=t.badge;
+    const curr=currAgg?currAgg.raw.find(r=>String(r.id)===String(t.id)):null;
+    const lastNote=(t.notes&&t.notes.length)?t.notes[t.notes.length-1].text:'';
+    return`<tr>
+      <td style="font-weight:600;color:var(--text)">${t.id}</td>
+      <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.name||''}">${t.name||'—'}</td>
+      <td style="font-size:10px">${t.store||'—'}</td>
+      <td>${t.city||'—'}</td>
+      <td style="font-size:10px">${t.dateAdded}</td>
+      <td style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.reason||''}">${t.reason||'—'}</td>
+      <td>${pct(t.perfAtAdd)}</td>
+      <td>${curr?pct(curr.perf):'—'}</td>
+      <td>${sparkline(t.history,60,24)}</td>
+      <td><span class="pill ${b.cls}">${b.emoji} ${b.label}</span>${b.diff?'<div style="font-size:10px;color:var(--text3);margin-top:2px">'+(b.diff>0?'+':'')+(b.diff*100).toFixed(1)+'pp</div>':''}</td>
+      <td>${isActive?'<span class="pill b">نشط</span>':'<span class="pill g">أكمل التدريب</span>'}</td>
+      <td style="text-align:center">${t.trainingCount||1}</td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lastNote}">${lastNote||'—'}</td>
+      <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn-exp" style="padding:3px 8px;font-size:10px" data-tnote="${t.id}">📝 ملاحظة</button>
+        ${isActive?'<button class="btn-exp" style="padding:3px 8px;font-size:10px" data-tend="'+t.id+'">✅ إنهاء</button>':'<button class="btn-exp" style="padding:3px 8px;font-size:10px" data-treact="'+t.id+'">↩️ إعادة تفعيل</button>'}
+        <button class="btn-exp" style="padding:3px 8px;font-size:10px;color:var(--red)" data-tdel="${t.id}" data-tlist="${isActive?'active':'completed'}">🗑️ حذف نهائي</button>
+      </td>
+    </tr>`;
+  };
+
+  // Smart recommendations from current data
+  const recs=currAgg?getTrainingRecommendations(currAgg.raw):[];
+
+  return`
+  ${recs.length?`
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph" style="background:var(--amber-bg,#d4891a10);border-bottom:1px solid var(--border)">
+      <div>
+        <span class="pt" style="color:var(--amber)">💡 توصيات ذكية — كباتن يُنصح بإضافتهم للتدريب</span>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">بناءً على تحليل نمط الأداء — ${recs.length} كابتن محدد</div>
+      </div>
+      <span class="info-chip">${recs.length} توصية</span>
+    </div>
+    <div class="scroll-x"><table class="tbl"><thead><tr>
+      <th>المعرّف</th><th>الاسم</th><th>المدينة</th><th>المتجر</th>
+      <th>الأداء</th><th>الطلبات</th><th>التوصيل</th><th>سبب التوصية</th><th>نقاط الأولوية</th><th>إجراء</th>
+    </tr></thead><tbody>
+    ${recs.map(r=>`<tr>
+      <td style="font-weight:600;color:var(--text)">${r.id}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name||'—'}</td>
+      <td>${r.city||'—'}</td>
+      <td style="font-size:10px">${r.store||'—'}</td>
+      <td><span class="pill ${pp(r.perf)}">${pct(r.perf)}</span></td>
+      <td style="font-weight:600;color:var(--text)">${r.orders||'—'}</td>
+      <td>${pct(r.del_pct)}</td>
+      <td style="font-size:11px;color:var(--text2)">${r.reasons.join(' · ')}</td>
+      <td><span style="font-family:var(--font-head);font-weight:700;color:var(--amber)">${r.score}</span></td>
+      <td><button class="btn-exp" style="padding:4px 12px;font-size:11px;border-color:var(--amber);color:var(--amber)" data-train-add="${r.id}" data-reason="${r.reasons[0]||'توصية ذكية'}">➕ إضافة</button></td>
+    </tr>`).join('')}
+    </tbody></table></div>
+  </div>`:''}
+  <div class="kpi-grid">
+    <div class="kpi b"><div class="kpi-lbl">إجمالي في التدريب حالياً</div><div class="kpi-val">${active.length}</div></div>
+    <div class="kpi g"><div class="kpi-lbl">تحسّنوا</div><div class="kpi-val">${improved}</div></div>
+    <div class="kpi a"><div class="kpi-lbl">لم يتغيروا</div><div class="kpi-val">${noChange}</div></div>
+    <div class="kpi r"><div class="kpi-lbl">تراجعوا</div><div class="kpi-val">${regressed}</div></div>
+    <div class="kpi ${avgImprove>=0?'g':'r'}"><div class="kpi-lbl">متوسط التحسن</div><div class="kpi-val">${avgImprove>=0?'+':''}${(avgImprove*100).toFixed(1)}pp</div></div>
+    <div class="kpi g"><div class="kpi-lbl">نسبة نجاح البرنامج</div><div class="kpi-val">${pct(successRate)}</div></div>
+    <div class="kpi b"><div class="kpi-lbl">أكملوا التدريب</div><div class="kpi-val">${completed.length}</div></div>
+  </div>
+
+  ${staleList.length?`<div class="panel" style="margin-top:12px">
+    <div class="ph"><span class="pt">⚠️ تنبيهات ذكية — بلا تحسن منذ 14 يوماً+</span><span class="info-chip">${staleList.length}</span></div>
+    <div class="alerts">${staleList.map(t=>`<div class="alert-row"><span class="alert-badge a">⚠️</span><div class="alert-desc">الكابتن <strong style="color:var(--text)">${t.name||t.id}</strong> لم يتحسن منذ إضافته لقائمة التدريب بتاريخ ${t.dateAdded} — يوصى بإعادة تقييمه أو اتخاذ إجراء مناسب.</div></div>`).join('')}</div>
+  </div>`:''}
+
+  <div class="two" style="margin-top:12px">
+    <div class="panel"><div class="ph"><span class="pt">🏆 أفضل 10 بعد التدريب</span></div><div class="pb">
+      ${topImproved.length?topImproved.map(t=>`<div class="br"><span class="br-l" title="${t.name||t.id}">${t.name||t.id}</span><div class="br-t"><div class="br-f" style="width:${Math.min(100,Math.abs(t.badge.diff)*300)}%;background:var(--green)"></div></div><span class="br-v g-txt">${t.badge.diff>0?'+':''}${(t.badge.diff*100).toFixed(1)}pp</span></div>`).join(''):'<div class="empty" style="padding:12px">لا بيانات كافية للمقارنة بعد</div>'}
+    </div></div>
+    <div class="panel"><div class="ph"><span class="pt">⚠️ أسوأ 10 يحتاجون متابعة</span></div><div class="pb">
+      ${worstFollow.length?worstFollow.map(t=>`<div class="br"><span class="br-l" title="${t.name||t.id}">${t.name||t.id}</span><div class="br-t"><div class="br-f" style="width:${Math.min(100,Math.abs(t.badge.diff)*300)}%;background:var(--red)"></div></div><span class="br-v r-txt">${t.badge.diff>0?'+':''}${(t.badge.diff*100).toFixed(1)}pp</span></div>`).join(''):'<div class="empty" style="padding:12px">لا كباتن في القائمة بعد</div>'}
+    </div></div>
+  </div>
+
+  ${topReasons.length?`<div class="panel" style="margin-top:12px"><div class="ph"><span class="pt">📋 أكثر أسباب الإضافة للتدريب</span></div><div class="pb">
+    ${topReasons.map(([reason,cnt])=>`<div class="br"><span class="br-l" style="width:170px" title="${reason}">${reason}</span><div class="br-t"><div class="br-f" style="width:${Math.min(100,cnt/(total||1)*100)}%;background:var(--blue)"></div></div><span class="br-v">${cnt}</span></div>`).join('')}
+  </div></div>`:''}
+
+  <div class="panel" style="margin-top:12px">
+    <div class="ph"><span class="pt">🎓 الكباتن الذين يحتاجون تدريب — نشط</span><span class="info-chip">${active.length} كابتن</span></div>
+    <div class="scroll-x"><table class="tbl"><thead><tr>
+      <th>المعرّف</th><th>الاسم</th><th>الفرع</th><th>المدينة</th><th>تاريخ الإضافة</th><th>السبب</th>
+      <th>الأداء عند الإضافة</th><th>الأداء الحالي</th><th>مخطط الأداء</th><th>المقارنة</th><th>الحالة الحالية</th><th>مرات التدريب</th><th>آخر ملاحظة</th><th>إجراءات</th>
+    </tr></thead><tbody>
+    ${active.length?withBadge.map(t=>rowHtml(t,true)).join(''):'<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">لا يوجد كباتن في قائمة التدريب حالياً — أضف كابتناً من تاب "أداء الكباتن" أو "التنبيهات"</td></tr>'}
+    </tbody></table></div>
+  </div>
+
+  <div class="panel" style="margin-top:12px">
+    <div class="ph"><span class="pt">✅ الكباتن الذين أكملوا التدريب</span><span class="info-chip">${completed.length} كابتن</span></div>
+    <div class="scroll-x"><table class="tbl"><thead><tr>
+      <th>المعرّف</th><th>الاسم</th><th>الفرع</th><th>المدينة</th><th>تاريخ الإضافة</th><th>السبب</th>
+      <th>الأداء عند الإضافة</th><th>الأداء الحالي</th><th>مخطط الأداء</th><th>المقارنة</th><th>الحالة الحالية</th><th>مرات التدريب</th><th>آخر ملاحظة</th><th>إجراءات</th>
+    </tr></thead><tbody>
+    ${completed.length?completedWithBadge.map(t=>rowHtml(t,false)).join(''):'<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">لا يوجد كباتن أكملوا التدريب بعد</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderAlerts(c){
   // Build per-signal captain lists
   const signals=[];
 
@@ -911,11 +1223,7 @@ function computeSignals(c){
 
   if(!signals.length)
     signals.push({type:'b',code:'OK',title:'لا تنبيهات حرجة',desc:'المؤشرات ضمن الحدود المقبولة.',rows:[],cols:[]});
-  return signals;
-}
 
-function renderAlerts(c){
-  const signals=computeSignals(c);
   const panelsHtml=signals.map(sig=>`
     <div class="panel" style="margin-bottom:12px">
       <div class="ph">
@@ -933,7 +1241,9 @@ function renderAlerts(c){
     <div class="alerts">${c.suggestions.map((s,i)=>`<div class="alert-row"><span class="alert-badge b">#${i+1}</span><div><div class="alert-desc">${s}</div></div></div>`).join('')}</div></div>`:'');
 }
 
-function computeMovers(c,p){
+function renderCompare(c,p){
+  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px">ارفع ملف الفترة السابقة لتفعيل المقارنة الكاملة</div>ارفع الملف من شريط الأدوات أعلاه</div></div>`;
+
   // ── Build lookup maps ──
   const pm={},sm={},cm_={};
   p.cities.forEach(ci=>pm[ci.city]=ci);
@@ -958,13 +1268,6 @@ function computeMovers(c,p){
     const prev=pCapMap[r.id];
     return{...r,dp:+(r.perf-prev.perf).toFixed(4),pp:prev.perf,pOrders:prev.orders,pPickup:prev.pickup_pct,pDel:prev.del_pct,pDelay:prev.delay,pHandling:prev.handling};
   });
-  return{cityMovers,storeMovers,capMovers};
-}
-
-function renderCompare(c,p){
-  if(!p)return`<div class="panel"><div class="empty"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px">ارفع ملف الفترة السابقة لتفعيل المقارنة الكاملة</div>ارفع الملف من شريط الأدوات أعلاه</div></div>`;
-
-  const {cityMovers,storeMovers,capMovers}=computeMovers(c,p);
 
   // ── KPI summary ──
   const topCity=cityMovers.length?[...cityMovers].sort((a,b)=>b.dp-a.dp)[0]:null;
@@ -1021,13 +1324,15 @@ function renderCompare(c,p){
     return`<span class="pill x">≈</span>`;
   };
 
-  const moverTable=(rows,label,cols,keyFn)=>{
+  const moverTable=(rows,label,cols,idFn,nameFn)=>{
     if(!rows.length)return`<div class="empty" style="padding:16px">لا بيانات كافية للمقارنة</div>`;
+    const showName=!!nameFn;
     return`<div class="scroll-x"><table class="tbl"><thead><tr>
-      <th>${label}</th>${cols.map(c=>`<th>${c.l}</th>`).join('')}<th>التغيير</th><th>الحكم</th>
+      <th>المعرّف</th>${showName?'<th>الاسم</th>':''}${cols.map(c=>`<th>${c.l}</th>`).join('')}<th>التغيير</th><th>الحكم</th>
     </tr></thead><tbody>
-    ${rows.slice(0,15).map(r=>`<tr>
-      <td style="font-weight:600;color:var(--text);font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${keyFn(r)}</td>
+    ${rows.slice(0,20).map(r=>`<tr>
+      <td style="font-weight:600;color:var(--text);font-size:11px">${idFn(r)}</td>
+      ${showName?`<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--text2)" title="${nameFn(r)||''}">${nameFn(r)||'—'}</td>`:''}
       ${cols.map(col=>{
         const cv=r[col.k],pv=r[col.pk];
         if(col.type==='pct')return`<td><span class="pill ${pp(cv)}">${pct(cv)}</span> ${pv!==null&&pv!==undefined?`<span style="font-size:9px;color:var(--text3)">(${pct(pv)})</span>`:''}</td>`;
@@ -1051,8 +1356,8 @@ function renderCompare(c,p){
     ${improvedCaps?`<div class="kpi g"><div class="kpi-lbl">كباتن تحسّنوا</div><div class="kpi-val">${improvedCaps}</div><div class="kpi-sub neu">من ${capMovers.length} كابتن مقارَن</div></div>`:''}
     ${topStore?`<div class="kpi g"><div class="kpi-lbl">🏆 أكبر تحسن متجر</div><div class="kpi-val" style="font-size:13px">${topStore.store}</div><div class="kpi-sub up">▲ ${(topStore.dp*100).toFixed(1)}pp</div></div>`:''}
     ${worstStore?`<div class="kpi r"><div class="kpi-lbl">📉 أكبر تراجع متجر</div><div class="kpi-val" style="font-size:13px">${worstStore.store}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstStore.dp)*100).toFixed(1)}pp</div></div>`:''}
-    ${topCap?`<div class="kpi g"><div class="kpi-lbl">⭐ أفضل كابتن</div><div class="kpi-val" style="font-size:13px">${String(topCap.id||topCap.name).substring(0,16)}</div><div class="kpi-sub up">▲ ${(topCap.dp*100).toFixed(1)}pp</div></div>`:''}
-    ${worstCap?`<div class="kpi r"><div class="kpi-lbl">⚠️ يحتاج متابعة</div><div class="kpi-val" style="font-size:13px">${String(worstCap.id||worstCap.name).substring(0,16)}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp</div></div>`:''}
+    ${topCap?`<div class="kpi g"><div class="kpi-lbl">⭐ أفضل كابتن</div><div class="kpi-val" style="font-size:13px">${String(topCap.name||topCap.id).substring(0,16)}</div><div class="kpi-sub up">▲ ${(topCap.dp*100).toFixed(1)}pp</div></div>`:''}
+    ${worstCap?`<div class="kpi r"><div class="kpi-lbl">⚠️ يحتاج متابعة</div><div class="kpi-val" style="font-size:13px">${String(worstCap.name||worstCap.id).substring(0,16)}</div><div class="kpi-sub dn">▼ ${(Math.abs(worstCap.dp)*100).toFixed(1)}pp</div></div>`:''}
   </div>
 
   <!-- INSIGHTS -->
@@ -1139,7 +1444,7 @@ function renderCompare(c,p){
       {k:'orders',pk:'pOrders',l:'الطلبات',type:'num'},
       {k:'del',pk:'pDel',l:'التوصيل',type:'pct'},
       {k:'delay',pk:'pDelay',l:'التأخير',type:'min'},
-    ],r=>r.store)}
+    ],r=>r.store,null)}
   </div>
 
   <!-- CAPTAIN COMPARISON -->
@@ -1150,7 +1455,7 @@ function renderCompare(c,p){
         <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px">⭐ أفضل الكباتن تحسناً</div>
         ${[...capMovers].sort((a,b)=>b.dp-a.dp).slice(0,6).map(r=>`
           <div class="br">
-            <span class="br-l" style="font-size:9px;width:90px" title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,12)}</span>
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
             <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--green)"></div></div>
             <span class="br-v g-txt">${pct(r.perf)}</span>
             <span class="br-d g-txt">▲${(r.dp*100).toFixed(1)}pp</span>
@@ -1160,7 +1465,7 @@ function renderCompare(c,p){
         <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ أكثر الكباتن تراجعاً</div>
         ${[...capMovers].sort((a,b)=>a.dp-b.dp).slice(0,6).map(r=>`
           <div class="br">
-            <span class="br-l" style="font-size:9px;width:90px" title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,12)}</span>
+            <span class="br-l" style="font-size:9px;width:90px" title="${r.name||r.id}">${String(r.name||r.id).substring(0,12)}</span>
             <div class="br-t"><div class="br-f" style="width:${r.perf!==null?(r.perf*100).toFixed(0):0}%;background:var(--red)"></div></div>
             <span class="br-v r-txt">${pct(r.perf)}</span>
             <span class="br-d r-txt">▼${(Math.abs(r.dp)*100).toFixed(1)}pp</span>
@@ -1175,341 +1480,11 @@ function renderCompare(c,p){
       {k:'del_pct',pk:'pDel',l:'التوصيل',type:'pct'},
       {k:'delay',pk:'pDelay',l:'التأخير',type:'min'},
       {k:'handling',pk:'pHandling',l:'وقت العميل',type:'min'},
-    ],r=>`<span title="${r.id||''}${r.name?' — '+r.name:''}">${String(r.id||r.name).substring(0,16)}</span>`)}
+    ],r=>r.id,r=>r.name||'—')}
   </div>`:'<div class="panel"><div class="empty" style="padding:20px">لا توجد كباتن مشتركون بين الفترتين للمقارنة المباشرة</div></div>'}`;
 }
 
-
-// ══════════════════════════════════════════════
-//  EXPORT TO EXCEL (.xlsx)
-// ══════════════════════════════════════════════
-const EXP_LABELS = {
-  id:'المعرّف', name:'الاسم', city:'المدينة', store:'المتجر', date:'التاريخ',
-  orders:'الطلبات', perf:'الأداء', pickup_pct:'نسبة الاستلام', del_pct:'نسبة التوصيل',
-  delay:'متوسط التأخير (دقيقة)', max_delay:'أقصى تأخير (دقيقة)', cancel:'نسبة الإلغاء',
-  bad:'الأيام السيئة', handling:'وقت التعامل (دقيقة)', country:'الدولة'
-};
-const EXP_LABELS_EN = {
-  id:'ID', name:'Name', city:'City', store:'Store', date:'Date',
-  orders:'Orders', perf:'Performance', pickup_pct:'Pickup %', del_pct:'Delivery %',
-  delay:'Avg Delay (min)', max_delay:'Max Delay (min)', cancel:'Cancel %',
-  bad:'Bad Days', handling:'Handling (min)', country:'Country'
-};
-const EXP_TYPES = { // for Excel cell formatting
-  perf:'pct', pickup_pct:'pct', del_pct:'pct', cancel:'pct',
-  orders:'int', bad:'int',
-  delay:'num1', max_delay:'num1', handling:'num1'
-};
-
-function expFmt(v, type){
-  if(v===null||v===undefined||v==='')return null;
-  if(type==='pct'){const n=+v;return isNaN(n)?null:+n.toFixed(4);}
-  if(type==='int'){const n=+v;return isNaN(n)?null:Math.round(n);}
-  if(type==='num1'){const n=+v;return isNaN(n)?null:+n.toFixed(1);}
-  return v;
-}
-function expExcelFmt(type){
-  if(type==='pct')return '0.0%';
-  if(type==='int')return '0';
-  if(type==='num1')return '0.0';
-  return null;
-}
-
-// ── Show toast ──
-function showToast(msg, type){
-  let t = document.getElementById('exp-toast');
-  if(!t){ t = document.createElement('div'); t.id='exp-toast'; t.className='toast'; document.body.appendChild(t); }
-  t.className = 'toast '+(type||'')+' show';
-  t.innerHTML = msg;
-  clearTimeout(window._toastTm);
-  window._toastTm = setTimeout(()=>{ t.classList.remove('show'); }, 3500);
-}
-
-// ── Menu builder ──
-window.toggleExpMenu = function(e){
-  if(e) e.stopPropagation();
-  const menu = document.getElementById('exp-menu');
-  if(!menu) return;
-  if(menu.classList.contains('open')){ menu.classList.remove('open'); return; }
-  const c = currAgg; if(!c){ showToast('⚠️ لا توجد بيانات للتصدير','err'); return; }
-  const items = [];
-  const tabName = {overview:'لمحة عامة', cities:'المدن', stores:'المتاجر',
-                   entities:'أداء الكباتن', alerts:'التنبيهات', compare:'المقارنة'}[activeTab]||'';
-  items.push({k:'tab',  l:`📄 التبويب الحالي (${tabName})`, s:'تصدير ما يظهر في الشاشة الآن'});
-  if(activeTab==='entities'){
-    const f = (typeof entFilterVals==='function')?entFilterVals():{};
-    const hasFilter = f.q||f.city||f.store||f.seg;
-    const filteredCount = (_lastFilteredEnts||[]).length;
-    items.push({k:'filtered', l:`🔍 الكباتن بعد الفلترة (${filteredCount})`,
-                s: hasFilter?'يحترم البحث والفلاتر والترتيب':'بدون فلتر — كل الكباتن'});
-    if(selEnts && selEnts.size>0){
-      items.push({k:'selected', l:`✓ المحدد فقط (${selEnts.size})`, s:'الصفوف المؤشّر عليها فقط'});
-    }
-  }
-  items.push({k:'full', l:'📚 تقرير شامل — كل التبويبات', s:'ملف بعدة أوراق (Sheets)'});
-
-  menu.innerHTML = items.map(it=>`<div class="exp-item" onclick="expReport('${it.k}')">
-    <div><div class="exp-l">${it.l}</div><div class="exp-s">${it.s}</div></div>
-  </div>`).join('');
-  menu.classList.add('open');
-};
-document.addEventListener('click', e=>{
-  const w = document.getElementById('exp-wrap');
-  if(w && !w.contains(e.target)){
-    const m = document.getElementById('exp-menu');
-    if(m) m.classList.remove('open');
-  }
-});
-
-// ── Worksheet builder with metadata header + RTL + column widths + cell formats ──
-function expBuildSheet(title, headerLabels, dataRows, colKeys, meta){
-  const now = new Date();
-  const dateStr = now.toLocaleString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const aoa = [];
-  // Metadata block
-  aoa.push([`OPS.INTEL — ${title}`]);
-  aoa.push(['Report Name / اسم التقرير', title]);
-  aoa.push(['Generated At / وقت التصدير', dateStr]);
-  if(meta && meta.source) aoa.push(['Source File / الملف المصدر', meta.source]);
-  if(meta && meta.rowsTotal!==undefined) aoa.push(['Total Rows / إجمالي الصفوف', meta.rowsTotal]);
-  if(meta && meta.filterDesc) aoa.push(['Filters / الفلاتر', meta.filterDesc]);
-  aoa.push([]); // blank row
-  const headerRowIdx = aoa.length; // 0-based index where header row starts
-  aoa.push(headerLabels);
-  dataRows.forEach(r=>aoa.push(r));
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  // (RTL is set at workbook level — works across SheetJS builds)
-
-  // Auto column widths (based on max content length)
-  const widths = headerLabels.map((h,ci)=>{
-    let maxLen = String(h||'').length;
-    for(let ri=0; ri<dataRows.length && ri<200; ri++){
-      const v = dataRows[ri][ci];
-      const len = v===null||v===undefined?0:String(v).length;
-      if(len>maxLen) maxLen = len;
-    }
-    return { wch: Math.min(Math.max(maxLen+2, 10), 40) };
-  });
-  ws['!cols'] = widths;
-
-  // Style title row + metadata + apply numeric formats to data cells
-  // SheetJS community build supports cell styles for read but writes plain xlsx;
-  // numeric formats via cell.z are written.
-  if(colKeys){
-    for(let ri=0; ri<dataRows.length; ri++){
-      colKeys.forEach((k,ci)=>{
-        const cellRef = XLSX.utils.encode_cell({c:ci, r:headerRowIdx+1+ri});
-        const cell = ws[cellRef];
-        if(!cell) return;
-        const t = EXP_TYPES[k];
-        const fmt = expExcelFmt(t);
-        if(fmt){ cell.z = fmt; cell.t = 'n'; }
-      });
-    }
-  }
-  // Merge title row across all columns
-  const nCols = headerLabels.length;
-  ws['!merges'] = ws['!merges']||[];
-  ws['!merges'].push({s:{r:0,c:0}, e:{r:0,c:Math.max(nCols-1,0)}});
-
-  return ws;
-}
-
-// ── Sheet builders per tab ──
-function expSheet_entities(rows){
-  const c = currAgg;
-  const keys = entityCols(c);
-  const headers = keys.map(k=>EXP_LABELS[k]||k);
-  const data = rows.map(r=>keys.map(k=>expFmt(r[k], EXP_TYPES[k])));
-  return { headers, data, keys, title:'أداء الكباتن' };
-}
-function expSheet_cities(){
-  const c = currAgg;
-  const keys = ['city','orders','perf','del_pct','pickup_pct','delay','bad'];
-  const headers = keys.map(k=>EXP_LABELS[k]||k);
-  const data = c.cities.map(ci=>keys.map(k=>expFmt(ci[k], EXP_TYPES[k])));
-  return { headers, data, keys, title:'أداء المدن' };
-}
-function expSheet_stores(){
-  const c = currAgg;
-  const keys = ['store','city','orders','perf','del_pct','pickup_pct','delay','bad'];
-  const headers = keys.map(k=>EXP_LABELS[k]||k);
-  const data = c.stores.map(s=>keys.map(k=>expFmt(s[k], EXP_TYPES[k])));
-  return { headers, data, keys, title:'أداء المتاجر' };
-}
-function expSheet_overview(){
-  const c = currAgg, p = prevAgg;
-  const rows = [];
-  rows.push(['Metric / المؤشر','Current / الحالي','Previous / السابق','Δ Change']);
-  const push=(label, cur, prev, type)=>{
-    const f = (v)=>v===null||v===undefined?'':(type==='pct'?+(+v).toFixed(4):type==='num1'?+(+v).toFixed(1):type==='int'?Math.round(+v):v);
-    const d = (cur!==null&&prev!==null&&prev!==undefined)?(+(cur-prev).toFixed(4)):null;
-    rows.push([label, f(cur), f(prev), d===null?'':d]);
-  };
-  push('إجمالي الطلبات / Total Orders', c.totOrders, p?p.totOrders:null, 'int');
-  push('عدد السجلات / Records', c.n, p?p.n:null, 'int');
-  if(c.hasPerf) push('متوسط الأداء / Avg Performance', c.avgPerf, p?p.avgPerf:null, 'pct');
-  if(c.hasDel)  push('متوسط التوصيل / Avg Delivery', c.avgDel, p?p.avgDel:null, 'pct');
-  if(c.hasPickup) push('متوسط الاستلام / Avg Pickup', c.avgPickup, p?p.avgPickup:null, 'pct');
-  if(c.hasDelay) push('متوسط التأخير / Avg Delay (min)', c.avgDelay, p?p.avgDelay:null, 'num1');
-  push('zeroDel', c.zeroDel, p?p.zeroDel:null, 'int');
-  return { headers: rows[0], data: rows.slice(1), keys: null, title:'لمحة عامة' };
-}
-function expSheet_alerts(){
-  const c = currAgg;
-  const headers = ['الأولوية / Priority','الكود / Code','العنوان / Title','الوصف / Description','عدد الصفوف / Rows'];
-  const data = (c.alerts||[]).map(a=>{
-    const pri = a.type==='r'?'🔴 حرج / Critical':a.type==='a'?'🟡 تحذير / Warning':'🔵 ملاحظة / Info';
-    return [pri, a.code||'', (a.title||'').replace(/<[^>]+>/g,''), (a.desc||'').replace(/<[^>]+>/g,''), a.rows?a.rows.length:0];
-  });
-  return { headers, data, keys:null, title:'التنبيهات' };
-}
-function expSheet_compare(){
-  const c = currAgg, p = prevAgg;
-  if(!p) return null;
-  const sm={}; p.stores.forEach(s=>sm[s.store]=s);
-  const pCapMap={}; p.raw.forEach(r=>{if(r.id)pCapMap[r.id]=r;});
-  // Captain movers
-  const rows = c.raw.filter(r=>r.id&&pCapMap[r.id]&&r.perf!==null&&pCapMap[r.id].perf!==null).map(r=>{
-    const prev = pCapMap[r.id];
-    return [
-      r.id||'', r.name||'', r.city||'', r.store||'',
-      expFmt(r.perf,'pct'), expFmt(prev.perf,'pct'), expFmt(r.perf-prev.perf,'pct'),
-      expFmt(r.orders,'int'), expFmt(prev.orders,'int'),
-      expFmt(r.del_pct,'pct'), expFmt(prev.del_pct,'pct'),
-      expFmt(r.delay,'num1'), expFmt(prev.delay,'num1')
-    ];
-  }).sort((a,b)=>(a[6]||0)-(b[6]||0));
-  const headers = ['المعرّف','الاسم','المدينة','المتجر',
-    'الأداء الحالي','الأداء السابق','Δ الأداء',
-    'الطلبات الحالية','الطلبات السابقة',
-    'التوصيل الحالي','التوصيل السابق',
-    'التأخير الحالي','التأخير السابق'];
-  const keys = ['id','name','city','store','perf','perf','perf','orders','orders','del_pct','del_pct','delay','delay'];
-  return { headers, data:rows, keys, title:'المقارنة — الكباتن' };
-}
-
-// ── Filter description (Arabic) ──
-function expFilterDesc(){
-  if(activeTab!=='entities') return '';
-  const f = entFilterVals();
-  const parts = [];
-  if(f.q) parts.push(`بحث: "${f.q}"`);
-  if(f.city) parts.push(`المدينة: ${f.city}`);
-  if(f.store) parts.push(`المتجر: ${f.store}`);
-  if(f.seg){
-    const segL = {critical:'خطر <33%',poor:'ضعيف 33-50%',avg:'متوسط 50-70%',good:'جيد 70-85%',elite:'نخبة >85%'}[f.seg];
-    parts.push(`الشريحة: ${segL}`);
-  }
-  if(f.sort) parts.push(`الترتيب: ${f.sort}`);
-  return parts.join(' | ');
-}
-
-// ── Source filename ──
-function expSourceName(){
-  const el = document.getElementById('tx-curr');
-  return el ? el.textContent : '';
-}
-
-// ── Build workbook and download ──
-function expDownload(wb, baseName){
-  const stamp = new Date().toISOString().replace(/[:T]/g,'-').slice(0,16);
-  const fname = `${baseName}_${stamp}.xlsx`;
-  XLSX.writeFile(wb, fname, { bookType:'xlsx', compression:true });
-  return fname;
-}
-
-// ── Main dispatcher ──
-window.expReport = function(kind){
-  const menu = document.getElementById('exp-menu');
-  if(menu) menu.classList.remove('open');
-  const btn = document.getElementById('btn-export');
-  if(btn) btn.disabled = true;
-  showToast('⏳ جاري إنشاء الملف...', '');
-
-  // Defer to allow toast to paint, and to keep UI responsive on large data
-  setTimeout(()=>{
-    try {
-      const c = currAgg;
-      if(!c) throw new Error('لا توجد بيانات');
-      const meta = { source: expSourceName(), filterDesc: expFilterDesc() };
-      const wb = XLSX.utils.book_new();
-      wb.Workbook = { Views: [{ RTL: true }] };
-      let baseName = 'ops_intel_export';
-      let sheetCount = 0;
-
-      const addSheet = (built, sheetName)=>{
-        if(!built || !built.data || !built.data.length){
-          // Still add an empty sheet with headers so the file isn't blank
-          if(!built) return;
-        }
-        const m = { ...meta, rowsTotal: (built.data||[]).length };
-        const ws = expBuildSheet(built.title, built.headers, built.data||[], built.keys, m);
-        const name = (sheetName||built.title).substring(0,31).replace(/[\\\/\?\*\[\]:]/g,'_');
-        XLSX.utils.book_append_sheet(wb, ws, name);
-        sheetCount++;
-      };
-
-      if(kind==='tab'){
-        if(activeTab==='entities'){
-          // Export all entity rows (no filter) when "current tab" pressed on entities
-          addSheet(expSheet_entities(c.raw), 'الكباتن');
-          baseName = 'captains_all';
-        } else if(activeTab==='cities'){
-          addSheet(expSheet_cities(), 'المدن');
-          baseName = 'cities';
-        } else if(activeTab==='stores'){
-          addSheet(expSheet_stores(), 'المتاجر');
-          baseName = 'stores';
-        } else if(activeTab==='overview'){
-          addSheet(expSheet_overview(), 'لمحة عامة');
-          baseName = 'overview';
-        } else if(activeTab==='alerts'){
-          addSheet(expSheet_alerts(), 'التنبيهات');
-          baseName = 'alerts';
-        } else if(activeTab==='compare'){
-          const s = expSheet_compare();
-          if(!s) throw new Error('لا توجد بيانات مقارنة — ارفع الفترة السابقة');
-          addSheet(s, 'المقارنة');
-          baseName = 'comparison';
-        }
-      } else if(kind==='filtered'){
-        const rows = (typeof computeFilteredEnts==='function')?computeFilteredEnts():c.raw;
-        addSheet(expSheet_entities(rows), 'الكباتن (مفلتر)');
-        baseName = 'captains_filtered';
-      } else if(kind==='selected'){
-        const rows = c.raw.filter(r=>selEnts.has(r._ix));
-        if(!rows.length) throw new Error('لم يتم تحديد أي صف');
-        addSheet(expSheet_entities(rows), 'الكباتن (محدد)');
-        baseName = 'captains_selected';
-      } else if(kind==='full'){
-        addSheet(expSheet_overview(), 'لمحة عامة');
-        addSheet(expSheet_cities(), 'المدن');
-        addSheet(expSheet_stores(), 'المتاجر');
-        addSheet(expSheet_entities(c.raw), 'الكباتن');
-        addSheet(expSheet_alerts(), 'التنبيهات');
-        const cmp = expSheet_compare(); if(cmp) addSheet(cmp, 'المقارنة');
-        baseName = 'ops_intel_full_report';
-      }
-
-      if(sheetCount===0) throw new Error('لا توجد أوراق للتصدير');
-
-      const fname = expDownload(wb, baseName);
-      showToast(`✅ تم التصدير بنجاح<br><span style="font-size:10px;color:var(--text3)">${fname} — ${sheetCount} ورقة</span>`, 'ok');
-    } catch(err){
-      console.error(err);
-      showToast(`❌ فشل التصدير: ${err.message||err}`, 'err');
-    } finally {
-      if(btn) btn.disabled = false;
-    }
-  }, 60);
-};
-
-
 function renderWelcome(){
-  const _ew1=document.getElementById('exp-wrap');if(_ew1)_ew1.style.display='none';
   document.getElementById('main').innerHTML=`
   <label class="drop-zone" id="dz">
     <input type="file" id="dz-file" accept=".xlsx,.xls,.csv">
@@ -1560,6 +1535,156 @@ window.toggleTheme=function(){
   if(s==='light'){isDark=false;document.documentElement.setAttribute('data-theme','light');document.getElementById('td').className='on';document.getElementById('tn').className='';}
   else document.documentElement.setAttribute('data-theme','dark');
 })();
+
+// ══════════════════════════════════════════════
+//  MODAL SYSTEM — replaces prompt() for compatibility
+// ══════════════════════════════════════════════
+function showModal(title, subtitle, defaultVal, onConfirm){
+  let overlay=document.getElementById('ops-modal-overlay');
+  if(overlay)overlay.remove();
+  overlay=document.createElement('div');
+  overlay.id='ops-modal-overlay';
+  overlay.className='modal-overlay';
+  overlay.innerHTML='<div class="modal-box">'
+    +'<h3>'+title+'</h3>'
+    +(subtitle?'<p>'+subtitle+'</p>':'')
+    +(onConfirm!==null?'<input class="modal-input" id="modal-inp" placeholder="اكتب هنا..." value="'+defaultVal+'">'  :'')
+    +'<div class="modal-btns">'
+    +'<button class="modal-btn cancel" id="modal-cancel">إلغاء</button>'
+    +(onConfirm!==null?'<button class="modal-btn primary" id="modal-ok">تأكيد</button>':'<button class="modal-btn primary" id="modal-ok">حسناً</button>')
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(overlay);
+  const inp=document.getElementById('modal-inp');
+  const okBtn=document.getElementById('modal-ok');
+  const cancelBtn=document.getElementById('modal-cancel');
+  if(inp){inp.focus();inp.select();}
+  function close(){overlay.remove();}
+  cancelBtn.addEventListener('click',close);
+  okBtn.addEventListener('click',function(){
+    const val=inp?inp.value.trim():'';
+    close();
+    if(onConfirm)onConfirm(val);
+  });
+  if(inp){inp.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){okBtn.click();}
+    if(e.key==='Escape'){close();}
+  });}
+  overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+}
+
+// ══════════════════════════════════════════════
+//  SMART TRAINING RECOMMENDATIONS ENGINE
+// ══════════════════════════════════════════════
+function getTrainingRecommendations(agg){
+  if(!agg||!agg.raw||!agg.raw.length)return[];
+  const existingIds=new Set([
+    ...trainingData.active.map(t=>String(t.id)),
+    ...trainingData.completed.map(t=>String(t.id))
+  ]);
+  const recs=[];
+  agg.raw.forEach(r=>{
+    if(existingIds.has(String(r.id)))return;
+    if(!r.orders||r.orders<3)return;
+    const reasons=[];let priority=0;
+    if(r.perf!==null&&r.perf<0.33){reasons.push('أداء بالغ الخطورة ('+pct(r.perf)+')');priority+=5;}
+    else if(r.perf!==null&&r.perf<0.5){reasons.push('أداء منخفض ('+pct(r.perf)+')');priority+=3;}
+    if(r.del_pct!==null&&r.del_pct<0.3){reasons.push('توصيل ضعيف جداً ('+pct(r.del_pct)+')');priority+=3;}
+    if(r.bad!==null&&r.bad>=5){reasons.push('أيام سيئة متكررة ('+Math.round(r.bad)+' أيام)');priority+=3;}
+    if(r.pickup_pct!==null&&r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5){reasons.push('إشارة تلاعب FRAUD-1');priority+=4;}
+    if(r.delay!==null&&r.delay>15){reasons.push('متوسط تأخير عالٍ ('+r.delay.toFixed(1)+' دق)');priority+=2;}
+    if(r.handling!==null&&r.handling<0.5&&r.orders>=5){reasons.push('وقت تسليم مشبوه (<30 ثانية)');priority+=4;}
+    if(reasons.length>0)recs.push({...r,reasons,priority});
+  });
+  return recs.sort((a,b)=>b.priority-a.priority).slice(0,50);
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT FUNCTIONS
+// ══════════════════════════════════════════════
+function toCSV(rows,fields){
+  if(!rows||!rows.length)return'';
+  const NL=String.fromCharCode(10);
+  const header=fields.map(f=>f.l).join(',');
+  const body=rows.map(r=>fields.map(f=>{
+    const v=r[f.k];
+    if(v===null||v===undefined||v==='')return'—';
+    if(f.type==='pct')return((v*100).toFixed(1)+'%');
+    if(f.type==='num')return Math.round(v);
+    if(f.type==='min')return(v.toFixed(1)+' دق');
+    return String(v).replace(/,/g,'،');
+  }).join(',')).join(NL);
+  return String.fromCharCode(0xFEFF)+header+NL+body;
+}
+
+function downloadCSV(content,filename){
+  const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+
+window.exportCurrent=function(type){
+  if(!currAgg)return;
+  const c=currAgg;
+  const ts=new Date().toISOString().slice(0,10);
+  if(type==='captains'){
+    const fields=[
+      {k:'id',l:'المعرّف',type:'str'},{k:'name',l:'الاسم',type:'str'},
+      {k:'city',l:'المدينة',type:'str'},{k:'store',l:'المتجر',type:'str'},
+      {k:'orders',l:'الطلبات',type:'num'},{k:'perf',l:'الأداء',type:'pct'},
+      {k:'pickup_pct',l:'الاستلام',type:'pct'},{k:'del_pct',l:'التوصيل',type:'pct'},
+      {k:'delay',l:'التأخير (دق)',type:'min'},{k:'bad',l:'الأيام السيئة',type:'num'},
+      {k:'handling',l:'وقت العميل (دق)',type:'min'}
+    ];
+    downloadCSV(toCSV(c.raw,fields),`captains_${ts}.csv`);
+  } else if(type==='cities'){
+    const fields=[
+      {k:'city',l:'المدينة',type:'str'},{k:'n',l:'الكباتن',type:'num'},
+      {k:'orders',l:'الطلبات',type:'num'},{k:'perf',l:'الأداء',type:'pct'},
+      {k:'del',l:'التوصيل',type:'pct'},{k:'delay',l:'التأخير',type:'min'},
+      {k:'bad',l:'الأيام السيئة',type:'num'}
+    ];
+    downloadCSV(toCSV(c.cities,fields),`cities_${ts}.csv`);
+  } else if(type==='stores'){
+    const fields=[
+      {k:'store',l:'المتجر',type:'str'},{k:'n',l:'الكباتن',type:'num'},
+      {k:'orders',l:'الطلبات',type:'num'},{k:'perf',l:'الأداء',type:'pct'},
+      {k:'del',l:'التوصيل',type:'pct'},{k:'delay',l:'التأخير',type:'min'},
+      {k:'bad',l:'الأيام السيئة',type:'num'}
+    ];
+    downloadCSV(toCSV(c.stores,fields),`stores_${ts}.csv`);
+  } else if(type==='fraud'){
+    const f1=c.raw.filter(r=>r.pickup_pct>=0.8&&r.del_pct===0&&r.orders>=5);
+    const f5=c.raw.filter(r=>r.perf!==null&&r.perf<0.1&&r.orders>=3);
+    const fraudRows=[...f1,...f5].filter((r,i,a)=>a.findIndex(x=>x.id===r.id)===i);
+    const fields=[
+      {k:'id',l:'المعرّف',type:'str'},{k:'name',l:'الاسم',type:'str'},
+      {k:'city',l:'المدينة',type:'str'},{k:'store',l:'المتجر',type:'str'},
+      {k:'orders',l:'الطلبات',type:'num'},{k:'perf',l:'الأداء',type:'pct'},
+      {k:'pickup_pct',l:'الاستلام',type:'pct'},{k:'del_pct',l:'التوصيل',type:'pct'},
+      {k:'bad',l:'الأيام السيئة',type:'num'}
+    ];
+    downloadCSV(toCSV(fraudRows,fields),`fraud_captains_${ts}.csv`);
+  }
+};
+
+// ══════════════════════════════════════════════
+//  GLOBAL EVENT DELEGATION — single listener for all dynamic buttons
+// ══════════════════════════════════════════════
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('[data-sw],[data-exp],[data-train-add],[data-tnote],[data-tend],[data-treact],[data-tdel]');
+  if(!btn) return;
+  e.stopPropagation();
+  if(btn.hasAttribute('data-sw'))      { sw(btn.getAttribute('data-sw')); return; }
+  if(btn.hasAttribute('data-exp'))     { exportCurrent(btn.getAttribute('data-exp')); return; }
+  if(btn.hasAttribute('data-train-add')){ addToTraining(btn.getAttribute('data-train-add'), btn.getAttribute('data-reason')||null); return; }
+  if(btn.hasAttribute('data-tnote'))   { addTrainingNote(btn.getAttribute('data-tnote')); return; }
+  if(btn.hasAttribute('data-tend'))    { endTraining(btn.getAttribute('data-tend')); return; }
+  if(btn.hasAttribute('data-treact')) { reactivateTraining(btn.getAttribute('data-treact')); return; }
+  if(btn.hasAttribute('data-tdel'))    { deleteTrainingPermanent(btn.getAttribute('data-tdel'), btn.getAttribute('data-tlist')); return; }
+});
 
 // ══════════════════════════════════════════════
 //  INIT
